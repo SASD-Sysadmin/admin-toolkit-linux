@@ -9,11 +9,13 @@
 # - It does not restart or reload sshd.
 # - It tries to use `sshd -T` for the effective configuration when available.
 # - It falls back to parsing a config file when `sshd -T` is not available.
+# - If OpenSSH server configuration is not present, it reports that fact instead
+#   of aborting. This is important on WSL, containers and minimal lab systems.
 #
 # Why `sshd -T` matters:
-# OpenSSH supports Include directives and distribution-specific defaults. Reading only
-# /etc/ssh/sshd_config can miss settings from included files or built-in defaults.
-# `sshd -T` prints the effective configuration as OpenSSH understands it.
+# OpenSSH supports Include directives and distribution-specific defaults. Reading
+# only /etc/ssh/sshd_config can miss settings from included files or built-in
+# defaults. `sshd -T` prints the effective configuration as OpenSSH understands it.
 #
 # Typical usage:
 #   ./scripts/config/sasd-sshd-config-report.sh
@@ -24,7 +26,7 @@
 set -o nounset
 set -o pipefail
 
-VERSION="0.1.0"
+VERSION="0.1.1"
 CONFIG_FILE="/etc/ssh/sshd_config"
 FORMAT="text"
 USE_EFFECTIVE="auto"
@@ -48,9 +50,9 @@ Options:
   --version            Show version.
 
 Exit codes:
-  0  Report created.
+  0  Report created. Findings are expressed in the report body.
   1  Invalid arguments or unsupported format.
-  2  Configuration source could not be read.
+  2  Requested effective mode failed.
 USAGE
 }
 
@@ -96,28 +98,31 @@ case "$FORMAT" in
 esac
 
 # Store configuration as lower-case key=value lines in a temporary file.
-# We avoid bash associative arrays to keep the script simple and easy to review.
+# We avoid bash associative arrays to keep the script easy to read and review.
 TMP_CONFIG="$(mktemp)"
 trap 'rm -f "$TMP_CONFIG"' EXIT
 
 can_use_effective() {
     command -v sshd >/dev/null 2>&1 || return 1
-    # Some OpenSSH builds require an absolute path to sshd. command -v gives that.
-    # On some systems sshd -T may need readable host keys or a valid runtime dir.
+
+    # Some systems require additional runtime paths or host keys before sshd -T
+    # succeeds. We only use it when it works cleanly. Otherwise we fall back to
+    # file parsing or a "not present" report.
     "$(command -v sshd)" -T >/dev/null 2>&1
 }
 
 load_effective_config() {
-    "$(command -v sshd)" -T 2>/dev/null | awk '{print tolower($1) "=" substr($0, index($0,$2))}' > "$TMP_CONFIG"
+    "$(command -v sshd)" -T 2>/dev/null |
+        awk '{print tolower($1) "=" substr($0, index($0,$2))}' > "$TMP_CONFIG"
 }
 
 load_file_config() {
     local file="$1"
     [[ -r "$file" ]] || return 1
 
-    # This parser is deliberately simple. It reads explicit key/value pairs from one
-    # file and ignores comments. It does not expand Include directives. That is why
-    # `sshd -T` is preferred when available.
+    # This parser is deliberately simple. It reads explicit key/value pairs from
+    # one file and ignores comments. It does not expand Include directives. That
+    # is why `sshd -T` is preferred when available.
     awk '
         /^[[:space:]]*($|#)/ { next }
         {
@@ -130,6 +135,8 @@ load_file_config() {
 }
 
 SOURCE=""
+NO_CONFIG="false"
+
 if [[ "$USE_EFFECTIVE" == "yes" ]]; then
     if can_use_effective; then
         load_effective_config
@@ -145,8 +152,9 @@ else
     if load_file_config "$CONFIG_FILE"; then
         SOURCE="parsed file: $CONFIG_FILE"
     else
-        echo "ERROR: Cannot read configuration source: $CONFIG_FILE" >&2
-        exit 2
+        SOURCE="OpenSSH server configuration not readable or not present: $CONFIG_FILE"
+        NO_CONFIG="true"
+        : > "$TMP_CONFIG"
     fi
 fi
 
@@ -161,12 +169,18 @@ status_for_setting() {
     local key="$1"
     local value="$2"
 
+    if [[ "$NO_CONFIG" == "true" ]]; then
+        echo "INFO"
+        return 0
+    fi
+
     case "$key" in
         permitrootlogin)
             case "$value" in
                 no) echo "OK" ;;
                 prohibit-password|without-password) echo "WARN" ;;
                 yes) echo "WARN" ;;
+                not\ set) echo "INFO" ;;
                 *) echo "INFO" ;;
             esac
             ;;
@@ -209,6 +223,12 @@ print_markdown_header() {
 
 note_for_setting() {
     local key="$1"
+
+    if [[ "$NO_CONFIG" == "true" ]]; then
+        echo "No sshd configuration was readable. OpenSSH server may be absent, disabled, containerized or not installed."
+        return 0
+    fi
+
     case "$key" in
         permitrootlogin) echo "Root login should normally be disabled or limited." ;;
         passwordauthentication) echo "Password login increases brute-force exposure on internet-facing hosts." ;;
@@ -257,7 +277,14 @@ for key in "${SETTINGS[@]}"; do
     fi
 done
 
-if [[ "$SOURCE" == parsed* ]]; then
+if [[ "$NO_CONFIG" == "true" ]]; then
+    echo
+    if [[ "$FORMAT" == "markdown" ]]; then
+        echo "> Note: No readable OpenSSH server configuration was found. This can be normal on WSL, containers or systems without openssh-server."
+    else
+        echo "NOTE: No readable OpenSSH server configuration was found. This can be normal on WSL, containers or systems without openssh-server."
+    fi
+elif [[ "$SOURCE" == parsed* ]]; then
     echo
     if [[ "$FORMAT" == "markdown" ]]; then
         echo "> Note: This report parsed one config file. Use '--effective' on hosts where sshd -T is available to include OpenSSH defaults and Include directives."

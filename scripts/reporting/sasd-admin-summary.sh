@@ -9,6 +9,12 @@
 # Missing scripts are skipped with a note. This makes the wrapper useful while the
 # toolkit is still growing.
 #
+# Important implementation detail:
+# Several child scripts already output Markdown, including fenced code blocks. If
+# this wrapper placed that output inside another fenced block, the generated report
+# would contain broken nested fences. Therefore command output is rendered as an
+# indented code block. This is less fancy, but robust and easy to read on GitHub.
+#
 # Typical usage:
 #   ./scripts/reporting/sasd-admin-summary.sh > admin-summary.md
 #   ./scripts/reporting/sasd-admin-summary.sh --output /tmp/admin-summary.md
@@ -17,7 +23,7 @@
 set -o nounset
 set -o pipefail
 
-VERSION="0.1.0"
+VERSION="0.1.1"
 OUTPUT="-"
 TIMEOUT_SECONDS=30
 
@@ -81,10 +87,18 @@ have_timeout() {
     command -v timeout >/dev/null 2>&1
 }
 
+append_indented_output() {
+    # Prefix every line with four spaces. Markdown renders this as a code block,
+    # and existing backticks inside child-script output no longer break the report.
+    sed 's/^/    /' >> "$TMP_REPORT"
+}
+
 run_section() {
     local title="$1"
     local script_path="$2"
     shift 2
+    local rc=0
+    local tmp_output
 
     {
         echo
@@ -97,19 +111,24 @@ run_section() {
         return 0
     fi
 
-    echo '```text' >> "$TMP_REPORT"
+    printf -- 'Command: `%s`\n\n' "${script_path#$REPO_ROOT/} $*" >> "$TMP_REPORT"
+    tmp_output="$(mktemp)"
+
     if have_timeout; then
-        timeout "$TIMEOUT_SECONDS" "$script_path" "$@" >> "$TMP_REPORT" 2>&1 || {
-            rc=$?
-            echo "[wrapper] command exited with status $rc" >> "$TMP_REPORT"
-        }
+        timeout "$TIMEOUT_SECONDS" "$script_path" "$@" > "$tmp_output" 2>&1 || rc=$?
     else
-        "$script_path" "$@" >> "$TMP_REPORT" 2>&1 || {
-            rc=$?
-            echo "[wrapper] command exited with status $rc" >> "$TMP_REPORT"
-        }
+        "$script_path" "$@" > "$tmp_output" 2>&1 || rc=$?
     fi
-    echo '```' >> "$TMP_REPORT"
+
+    append_indented_output < "$tmp_output"
+    rm -f "$tmp_output"
+
+    if [[ "$rc" -ne 0 ]]; then
+        {
+            echo
+            printf -- '> Command exit status: `%s`. Some audit scripts use non-zero exit codes when findings are present; review the output above.\n' "$rc"
+        } >> "$TMP_REPORT"
+    fi
 }
 
 {
