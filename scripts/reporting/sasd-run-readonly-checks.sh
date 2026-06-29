@@ -20,12 +20,12 @@
 # This wrapper makes that possible while keeping the individual scripts readable
 # and independently usable.
 #
-# Notes
-# -----
-# - Some child scripts use non-zero exit codes when they find something worth
-#   reviewing. That does not necessarily mean the collector failed.
-# - Reports can contain hostnames, usernames, IP addresses, package names and
-#   local paths. Review the output before sharing it publicly.
+# Output strategy
+# ---------------
+# The collector runs direct checks by default. Top-level summary scripts are not
+# run unless --include-summary is provided, because they call many of the same
+# child scripts again and can easily duplicate output. This keeps the default
+# report set compact enough for review.
 # -----------------------------------------------------------------------------
 
 set -u
@@ -40,6 +40,8 @@ DEFAULT_OUTPUT="$REPO_ROOT/reports/${HOSTNAME_SHORT}-${TIMESTAMP}"
 OUTPUT_DIR="$DEFAULT_OUTPUT"
 TIMEOUT_SECONDS="120"
 INCLUDE_SLOW="no"
+INCLUDE_SUMMARY="no"
+WORLD_WRITABLE_MAX="500"
 
 show_help() {
     cat <<HELP
@@ -48,17 +50,22 @@ Usage: $SCRIPT_NAME [OPTIONS]
 Run selected read-only admin checks and collect their output.
 
 Options:
-  --output DIR        Write report files to DIR.
-                      Default: reports/<host>-<timestamp>
-  --timeout SECONDS   Per-command timeout when the timeout(1) command exists.
-                      Default: 120
-  --include-slow      Also run slower checks that may walk larger directory trees.
-  -h, --help          Show this help text.
+  --output DIR              Write report files to DIR.
+                            Default: reports/<host>-<timestamp>
+  --timeout SECONDS         Per-command timeout when timeout(1) exists.
+                            Default: 120
+  --include-slow            Also run slower checks that may walk larger trees.
+  --include-summary         Also run summary scripts that duplicate several
+                            child checks but provide human-readable overviews.
+  --world-writable-max N    Limit world-writable findings in the collected run.
+                            Default: 500
+  -h, --help                Show this help text.
 
 Examples:
   ./$SCRIPT_NAME
   ./$SCRIPT_NAME --output /tmp/sasd-report-dev102
-  ./$SCRIPT_NAME --include-slow --output ./reports/full-check
+  ./$SCRIPT_NAME --include-summary --output ./reports/full-check
+  ./$SCRIPT_NAME --include-slow --world-writable-max 1000
 
 Exit codes:
   0  Collector finished. Review INDEX.md for individual command statuses.
@@ -87,6 +94,16 @@ while [[ $# -gt 0 ]]; do
         --include-slow)
             INCLUDE_SLOW="yes"
             shift
+            ;;
+        --include-summary)
+            INCLUDE_SUMMARY="yes"
+            shift
+            ;;
+        --world-writable-max)
+            [[ $# -ge 2 ]] || fail "--world-writable-max requires a numeric argument"
+            [[ "$2" =~ ^[0-9]+$ ]] || fail "--world-writable-max must be numeric"
+            WORLD_WRITABLE_MAX="$2"
+            shift 2
             ;;
         -h|--help)
             show_help
@@ -129,9 +146,12 @@ command_exists() {
 run_script() {
     local relative_script="$1"
     local output_name="$2"
+    shift 2
+
     local script_path="$REPO_ROOT/$relative_script"
     local output_path="$OUTPUT_DIR/$output_name"
     local status=0
+    local command_args=("$@")
 
     if [[ ! -x "$script_path" ]]; then
         printf 'SKIP: %s is not executable or not present\n' "$relative_script" > "$output_path"
@@ -143,15 +163,19 @@ run_script() {
     {
         printf '# %s\n\n' "$relative_script"
         printf 'Generated: %s\n' "$(date -Is)"
-        printf 'Command: %s\n\n' "$script_path"
+        printf 'Command: %s' "$script_path"
+        if [[ ${#command_args[@]} -gt 0 ]]; then
+            printf ' %q' "${command_args[@]}"
+        fi
+        printf '\n\n'
         printf -- '--- output begins ---\n\n'
     } > "$output_path"
 
     if command_exists timeout; then
-        timeout "$TIMEOUT_SECONDS" "$script_path" >> "$output_path" 2>&1
+        timeout "$TIMEOUT_SECONDS" "$script_path" "${command_args[@]}" >> "$output_path" 2>&1
         status=$?
     else
-        "$script_path" >> "$output_path" 2>&1
+        "$script_path" "${command_args[@]}" >> "$output_path" 2>&1
         status=$?
     fi
 
@@ -186,7 +210,7 @@ run_script "scripts/security/sasd-ssh-baseline-check.sh" "32-ssh-baseline.md"
 run_script "scripts/security/sasd-system-accounts-audit.sh" "33-system-accounts.md"
 run_script "scripts/accounts/sasd-account-baseline.sh" "34-account-baseline.tsv"
 run_script "scripts/security/sasd-suid-sgid-audit.sh" "35-suid-sgid.md"
-run_script "scripts/security/sasd-world-writable-audit.sh" "36-world-writable.md"
+run_script "scripts/security/sasd-world-writable-audit.sh" "36-world-writable.md" --max-results "$WORLD_WRITABLE_MAX"
 run_script "scripts/security/sasd-sensitive-files-check.sh" "37-sensitive-files.md"
 
 # Logging and package/reboot state.
@@ -195,10 +219,12 @@ run_script "scripts/logging/sasd-auth-log-report.sh" "41-auth-log.md"
 run_script "scripts/packages/sasd-update-status-report.sh" "50-update-status.md"
 run_script "scripts/packages/sasd-reboot-required-report.sh" "51-reboot-required.md"
 
-# Summary reports call other scripts and can be longer, but they are useful as a
-# human-readable top-level view.
-run_script "scripts/reporting/sasd-admin-summary.sh" "90-admin-summary.md"
-run_script "scripts/reporting/sasd-security-summary.sh" "91-security-summary.md"
+if [[ "$INCLUDE_SUMMARY" == "yes" ]]; then
+    # Summary reports call other scripts and can be longer. They are useful as a
+    # human-readable top-level view, but they duplicate several direct outputs.
+    run_script "scripts/reporting/sasd-admin-summary.sh" "90-admin-summary.md"
+    run_script "scripts/reporting/sasd-security-summary.sh" "91-security-summary.md"
+fi
 
 if [[ "$INCLUDE_SLOW" == "yes" ]]; then
     run_script "scripts/security/sasd-fim-baseline.sh" "95-fim-baseline.tsv"
@@ -211,6 +237,7 @@ cat >> "$INDEX_FILE" <<FOOTER
 - Exit status 0 usually means OK or informational output.
 - Exit status 1 can mean findings were detected by an audit script.
 - Exit status 2 or higher usually means an execution problem or missing prerequisite.
+- Summary reports are excluded by default to avoid duplicated output. Use \`--include-summary\` when wanted.
 - Review each report before sharing it outside your environment.
 FOOTER
 

@@ -1,22 +1,52 @@
-# Running the Read-only Check Collection
+# Read-only Check Collection
 
-`sasd-run-readonly-checks.sh` is the recommended operational entry point once the
-individual scripts are present.
+`scripts/reporting/sasd-run-readonly-checks.sh` runs a curated set of safe,
+read-only checks and stores their output in a report directory.
 
-Example:
+The collector is intended for first-look host documentation and operational
+review. It does not change configuration, install packages, stop/start services
+or repair findings.
+
+## Basic usage
 
 ```bash
-./scripts/reporting/sasd-run-readonly-checks.sh --output /tmp/sasd-report-$(hostname -s)
+./scripts/reporting/sasd-run-readonly-checks.sh
 ```
 
-The output directory contains:
+The default output path is:
 
-- `INDEX.md` with the status of each child script
-- `status.tsv` for machine-readable status review
-- individual report files
+```text
+reports/<host>-<timestamp>/
+```
 
-Some child scripts return exit status `1` when they detect findings. This is not
-always a failure. The collector records the status and continues so the operator
-gets a complete report folder.
+Use a fixed output directory when you are testing:
 
-Use `--include-slow` to include slower checks such as file integrity baselines.
+```bash
+./scripts/reporting/sasd-run-readonly-checks.sh --output ./reports/dev102-test
+```
+
+## Summary reports
+
+Summary reports are excluded by default because they call many child checks again
+and can duplicate output. Include them explicitly when you want a human-readable
+top-level report:
+
+```bash
+./scripts/reporting/sasd-run-readonly-checks.sh --include-summary --output ./reports/full-review
+```
+
+## Large findings
+
+The world-writable audit is limited by default when called from the collector.
+Change the limit with:
+
+```bash
+./scripts/reporting/sasd-run-readonly-checks.sh --world-writable-max 1000
+```
+
+Run the individual script with `--full` when an unrestricted report is required.
+
+## Review notes
+
+Generated reports can contain hostnames, usernames, IP addresses, package names,
+service names and local paths. Review the output before sharing it publicly.
