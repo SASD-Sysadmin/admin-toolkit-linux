@@ -4,9 +4,7 @@ This roadmap keeps `admin-toolkit-linux` focused. The repository should grow fro
 
 ## Guiding rule
 
-Audit and documentation first. Configuration changes later.
-
-Every new script should be useful on its own, easy to review, safe by default and documented with at least one realistic example.
+Audit and documentation first. Configuration changes later. Every new script should be useful on its own, easy to review, safe by default and documented with at least one realistic example.
 
 ## Milestone 0: Repository foundation
 
@@ -18,10 +16,10 @@ Tasks:
 - [x] Add README, LICENSE, SECURITY and CHANGELOG
 - [x] Add shell syntax checks
 - [x] Add script safety documentation
-- [ ] Rename README heading to `admin-toolkit-linux`
-- [ ] Add roadmap and contribution workflow
-- [ ] Add issue templates for scripts, bugs and documentation
-- [ ] Add pull request template
+- [x] Rename README heading to `admin-toolkit-linux`
+- [x] Add roadmap and contribution workflow
+- [x] Add issue templates for scripts, bugs and documentation
+- [x] Add pull request template
 
 Exit criteria:
 

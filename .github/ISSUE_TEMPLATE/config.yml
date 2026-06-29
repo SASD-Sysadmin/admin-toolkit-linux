@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Security-sensitive report
+  - name: Security policy
     url: https://github.com/SASD-Sysadmin/admin-toolkit-linux/security/policy
-    about: Please do not report real vulnerabilities or private system details in public issues.
+    about: Please report security-sensitive issues according to the security policy.

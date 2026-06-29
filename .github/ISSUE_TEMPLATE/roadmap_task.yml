@@ -1,33 +1,18 @@
 name: Roadmap task
-description: Track one planned roadmap item
+description: Track a roadmap item
 title: "roadmap: "
-labels: ["roadmap"]
+labels:
+  - roadmap
 body:
-  - type: dropdown
-    id: milestone
-    attributes:
-      label: Roadmap milestone
-      options:
-        - Milestone 0 - Repository foundation
-        - Milestone 1 - Host documentation baseline
-        - Milestone 2 - Read-only security audit baseline
-        - Milestone 3 - Logging and operational review
-        - Milestone 4 - Monitoring plugin examples
-        - Milestone 5 - File integrity monitoring baseline
-        - Milestone 6 - Backup and restore validation
-        - Milestone 7 - Ansible baseline preparation
-    validations:
-      required: true
   - type: textarea
     id: task
     attributes:
-      label: Task
+      label: Roadmap task
       description: What should be done?
     validations:
       required: true
   - type: textarea
-    id: acceptance
+    id: done
     attributes:
-      label: Acceptance criteria
-      description: How do we know this task is complete?
-      placeholder: "- Script has --help\n- Example output exists\n- make syntax passes"
+      label: Done when
+      description: What are the exit criteria?

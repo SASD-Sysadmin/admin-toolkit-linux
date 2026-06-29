@@ -1,54 +1,43 @@
 # Repository strategy
 
-`admin-toolkit-linux` is the first repository in the planned SASD `admin-toolkit-*` family.
+`admin-toolkit-linux` is the first repository in a possible SASD `admin-toolkit-*` family.
 
-## Why Linux first
+## Why one Linux repository first?
 
-Linux is the strongest starting point because it matches the current practical focus: host documentation, security audits, log review, monitoring checks, backup validation and small-company operations.
+The first goal is to create a focused, useful and maintained Linux administration toolbox. Too many empty repositories would look unfinished and would increase maintenance work. This repository should become strong before other operating-system-specific repositories are created.
 
-## Why not one repository for every Unix system immediately
+## Future repository family
 
-Empty repositories look unfinished. A small number of useful, documented repositories is stronger than many placeholders.
+Possible later repositories:
 
-Create a sibling repository only when there is enough operating-system-specific material to justify it.
+- `admin-toolkit-freebsd`
+- `admin-toolkit-linux`
+- `admin-toolkit-macos`
+- `admin-toolkit-openbsd`
+- `admin-toolkit-solaris`
 
-## Naming convention
-
-Use this pattern:
-
-```text
-admin-toolkit-<platform>
-```
-
-Examples:
-
-```text
-admin-toolkit-freebsd
-admin-toolkit-linux
-admin-toolkit-macos
-admin-toolkit-openbsd
-admin-toolkit-solaris
-```
-
-Use lowercase repository names for consistency and easier command-line use.
+The naming scheme keeps related repositories close together in alphabetical lists.
 
 ## Split rule
 
-A new repository should be created only when all of these are true:
+Create a new sibling repository only when there is enough material to make it useful on its own.
 
-- it has at least five meaningful scripts or runbooks
-- it has a README that explains its independent purpose
-- it has safe examples
-- it has a realistic roadmap
-- it is not just a renamed copy of the Linux repository
+A new repository should have:
 
-## Shared standards
+- a clear README
+- at least a small but useful script set
+- documentation
+- example output
+- safety notes
+- basic checks or tests
 
-All repositories in the family should follow the same principles:
+## Language policy
 
-- readable before compact
-- documented before magical
-- read-only by default
-- no secrets or customer data
-- explicit opt-in for changes
-- small scripts with clear operational purpose
+Scripts do not have to be written in Perl. Use the language that makes the specific task easiest to read, test and maintain.
+
+Suggested defaults:
+
+- Bash for small Linux-native checks
+- Python for structured reports and data transformation
+- Perl for classic sysadmin text parsing when it is clearly useful
+- Ansible for configuration management after the read-only baseline is mature

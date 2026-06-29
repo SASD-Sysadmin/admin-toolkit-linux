@@ -1,59 +1,43 @@
 # Contributing
 
-Thank you for improving `admin-toolkit-linux`.
+This repository is intentionally conservative. Contributions should make Linux administration easier to document, review and repeat without surprising the operator.
 
-This repository is intentionally conservative. It is meant to contain readable Linux administration scripts and runbooks that are useful for host documentation, security auditing, log review, monitoring checks, backup validation and small-company operations.
+## Principles
 
-## General rules
+- Prefer small, readable scripts over clever one-liners.
+- Prefer read-only audit and documentation helpers before remediation tools.
+- Do not include secrets, customer data, private IPs from real environments, tokens or private keys.
+- Make potentially disruptive behavior opt-in and visible.
+- Document assumptions and tested distributions.
 
-- Keep scripts readable before clever.
-- Prefer small focused tools over large all-in-one scripts.
-- Default to read-only behavior.
-- Do not include secrets, customer data, private hostnames or internal IP addresses.
-- Do not add destructive actions without an explicit opt-in such as `--apply`.
-- Explain limitations and assumptions in documentation.
-- Prefer boring, dependable tools that are available on common Linux systems.
+## Script requirements
 
-## Script expectations
+Every script should have:
 
-Every script should aim to provide:
+- a clear purpose in the file header
+- `--help` or clear usage output
+- predictable output
+- safe defaults
+- useful exit codes
+- no silent destructive behavior
+- examples in documentation or under `examples/`
 
-- clear purpose in the file header
-- usage output or `--help`
-- predictable exit codes
-- stdout for normal result output
-- stderr for warnings and errors
-- no hidden network activity
-- no automatic system modifications by default
-- comments where the operational intent is not obvious
-
-## Security-sensitive changes
-
-Security-related scripts should report findings carefully. A finding can be suspicious, risky or worth reviewing without being a confirmed compromise.
-
-Do not open public issues for real vulnerabilities affecting private systems. Follow `SECURITY.md` for sensitive reports.
-
-## Testing
-
-For shell scripts, run at least:
+Shell scripts should pass:
 
 ```bash
-make syntax
+bash -n path/to/script.sh
+shellcheck path/to/script.sh
 ```
 
-If ShellCheck is available, also run:
+## Documentation requirements
 
-```bash
-shellcheck scripts/**/*.sh
-```
+Markdown should be readable in GitHub and pass the repository Markdown lint workflow. Keep examples sanitized and avoid production-specific data.
 
-## Pull request checklist
+## Pull requests
 
-Before opening a pull request, check:
+A good pull request explains:
 
-- [ ] The script or document has a clear purpose.
-- [ ] The change is safe by default.
-- [ ] No secrets, customer data or internal addresses are included.
-- [ ] Example output is sanitized.
-- [ ] Documentation or README references are updated if needed.
-- [ ] Shell syntax checks pass for changed shell scripts.
+- what problem is solved
+- how the change was tested
+- whether the script is read-only or can change the system
+- what operating systems or distributions were used for testing

@@ -1,28 +1,31 @@
+# Pull request
+
 ## Summary
 
-Describe what this pull request changes and why.
+Describe what this pull request changes.
 
 ## Type of change
 
 - [ ] Script
 - [ ] Documentation
 - [ ] Example output
-- [ ] CI / repository maintenance
-- [ ] Other
+- [ ] Test or CI
+- [ ] Repository maintenance
 
-## Safety checklist
+## Safety
 
-- [ ] The change is read-only by default, or any modification requires explicit opt-in.
-- [ ] No secrets, customer data, private hostnames or internal IP addresses are included.
-- [ ] Example output is sanitized.
-- [ ] Risky behavior is documented clearly.
+- [ ] The change is read-only by default.
+- [ ] No secrets, customer data, private keys or internal production data are included.
+- [ ] Potentially disruptive behavior is opt-in and documented.
 
 ## Testing
 
-- [ ] `make syntax` passes for changed shell scripts.
-- [ ] I manually reviewed the output for misleading or unsafe wording.
-- [ ] Documentation links still work.
+Commands used for testing:
+
+```bash
+# paste test commands here
+```
 
 ## Notes
 
-Add any limitations, assumptions or follow-up tasks.
+Add anything reviewers should know.

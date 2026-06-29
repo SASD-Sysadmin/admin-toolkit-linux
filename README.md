@@ -74,7 +74,9 @@ bash scripts/monitoring/check_certificate_expiry.sh example.com 443 30
 
 ## Roadmap
 
-The project roadmap is tracked in [ROADMAP.md](ROADMAP.md). The first milestone is a trustworthy Linux host documentation and read-only security audit baseline. Configuration-changing automation will only be added after the audit scripts, examples and safety documentation are solid.
+The project roadmap is tracked in [ROADMAP.md](ROADMAP.md).
+
+The first milestone is a trustworthy Linux host documentation and read-only security audit baseline. Configuration-changing automation will only be added after the audit scripts, examples and safety documentation are solid.
 
 ## Safety
 
