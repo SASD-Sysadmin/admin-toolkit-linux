@@ -1,4 +1,4 @@
-# Host Documentation
+# Host documentation
 
 Host documentation scripts collect operational facts about a Linux system. They do not change configuration.
 

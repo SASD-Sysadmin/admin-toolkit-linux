@@ -29,5 +29,5 @@ These issues can be created manually in GitHub to make the roadmap visible and a
 ## Quality
 
 13. Add Bats tests for monitoring exit codes
-14. Fix file modes so only executable scripts have the executable bit
-15. Add example command output for every existing script
+14. Add example command output for every existing script
+15. Add a release checklist for version `v0.1.0`

@@ -1,22 +1,24 @@
-# Monitoring Checks
+# Monitoring checks
 
-Scripts in `scripts/monitoring/` follow a simple Nagios/Icinga-compatible style:
+Monitoring scripts follow a simple plugin style. They print one summary line and return predictable exit codes.
 
-- `0` = OK
-- `1` = WARNING
-- `2` = CRITICAL
-- `3` = UNKNOWN
+## Exit codes
 
-## Included checks
+- `0`: OK
+- `1`: WARNING
+- `2`: CRITICAL
+- `3`: UNKNOWN
 
-- `check_service_active.sh`
-- `check_reboot_required.sh`
-- `check_certificate_expiry.sh`
+## Included scripts
 
-## Examples
+- `scripts/monitoring/check_service_active.sh`
+- `scripts/monitoring/check_reboot_required.sh`
+- `scripts/monitoring/check_certificate_expiry.sh`
+
+## Example
 
 ```bash
 bash scripts/monitoring/check_service_active.sh ssh
-bash scripts/monitoring/check_reboot_required.sh
-bash scripts/monitoring/check_certificate_expiry.sh example.com 443 30
 ```
+
+The checks can be run by humans or integrated into Icinga/Nagios-compatible monitoring later.

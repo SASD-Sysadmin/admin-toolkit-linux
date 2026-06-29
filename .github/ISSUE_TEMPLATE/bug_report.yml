@@ -1,16 +1,9 @@
 name: Bug report
-description: Report a problem in an existing script or document
+description: Report a problem with an existing script or document
 title: "bug: "
 labels:
   - bug
 body:
-  - type: input
-    id: affected-file
-    attributes:
-      label: Affected file
-      placeholder: scripts/security/example.sh
-    validations:
-      required: true
   - type: textarea
     id: problem
     attributes:
@@ -18,8 +11,17 @@ body:
       description: What went wrong?
     validations:
       required: true
+
   - type: textarea
-    id: environment
+    id: reproduce
     attributes:
-      label: Environment
-      description: Distribution, version and shell if relevant.
+      label: Steps to reproduce
+      description: Provide sanitized commands and output.
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: Debian 12, Ubuntu 24.04, etc.

@@ -1,18 +1,21 @@
 name: Roadmap task
-description: Track a roadmap item
+description: Track work from ROADMAP.md
 title: "roadmap: "
 labels:
   - roadmap
 body:
   - type: textarea
-    id: task
+    id: milestone
     attributes:
-      label: Roadmap task
-      description: What should be done?
+      label: Milestone
+      description: Which roadmap milestone does this belong to?
     validations:
       required: true
+
   - type: textarea
     id: done
     attributes:
       label: Done when
-      description: What are the exit criteria?
+      description: Describe the exit criteria.
+    validations:
+      required: true

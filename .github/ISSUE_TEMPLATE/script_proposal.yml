@@ -11,6 +11,7 @@ body:
       description: What should the script help with?
     validations:
       required: true
+
   - type: dropdown
     id: category
     attributes:
@@ -26,6 +27,7 @@ body:
         - other
     validations:
       required: true
+
   - type: checkboxes
     id: safety
     attributes:

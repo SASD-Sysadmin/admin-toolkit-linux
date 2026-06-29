@@ -1,45 +1,40 @@
 #!/usr/bin/env bash
 # Path: scripts/host-doc/sasd-package-inventory.sh
-# Purpose: Document installed packages on common Linux distributions.
+# Purpose: Collect read-only package inventory on common Linux distributions.
 # Date: 2026-06-29
 # License: MIT
 
 set -uo pipefail
 
-VERSION="0.1.0"
-
 usage() {
   cat <<'EOF'
-Usage: sasd-package-inventory.sh [--help] [--version]
+Usage: sasd-package-inventory.sh [--help]
 
-Create a read-only package inventory for Debian/Ubuntu or RPM-based Linux systems.
+Print installed package information for Debian/Ubuntu or RPM-based systems.
+No system changes are made.
 EOF
 }
 
-if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then usage; exit 0; fi
-if [[ "${1:-}" == "--version" ]]; then echo "$VERSION"; exit 0; fi
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  usage
+  exit 0
+fi
 
-cat <<EOF
-# SASD Package Inventory
-
-Generated UTC: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-Hostname: $(hostname 2>/dev/null || echo unknown)
-
-EOF
+printf '# Package Inventory\n\nGenerated: %s\n\n' "$(date -Is 2>/dev/null || date)"
 
 if command -v dpkg-query >/dev/null 2>&1; then
+  echo '## Debian packages'
+  echo
   echo '```text'
-  dpkg-query -W -f='${Package}\t${Version}\t${Architecture}\n' | sort
+  dpkg-query -W -f='${binary:Package}\t${Version}\n' 2>/dev/null | sort
   echo '```'
 elif command -v rpm >/dev/null 2>&1; then
+  echo '## RPM packages'
+  echo
   echo '```text'
-  rpm -qa --qf '%{NAME}\t%{VERSION}-%{RELEASE}\t%{ARCH}\n' | sort
-  echo '```'
-elif command -v pacman >/dev/null 2>&1; then
-  echo '```text'
-  pacman -Q | sort
+  rpm -qa --qf '%{NAME}\t%{VERSION}-%{RELEASE}\n' 2>/dev/null | sort
   echo '```'
 else
-  echo "ERROR: no supported package manager found" >&2
-  exit 2
+  echo 'No supported package manager found.'
+  exit 3
 fi

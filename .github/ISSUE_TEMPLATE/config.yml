@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Security policy
-    url: https://github.com/SASD-Sysadmin/admin-toolkit-linux/security/policy
-    about: Please report security-sensitive issues according to the security policy.
+  - name: Repository roadmap
+    url: https://github.com/SASD-Sysadmin/admin-toolkit-linux/blob/main/ROADMAP.md
+    about: Review the planned milestones before proposing larger changes.

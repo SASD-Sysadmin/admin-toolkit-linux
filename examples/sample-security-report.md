@@ -1,13 +1,20 @@
-# Sample Security Report
+# Sample security report
 
-Generated from read-only SASD security audit helpers on a sanitized lab system.
+This is sanitized example output. It demonstrates the expected style of findings.
 
-## Findings
+## Open ports
 
-- Open ports: SSH on TCP/22, HTTP on TCP/80
-- SUID/SGID files: expected distribution defaults only
-- SSH baseline: root login disabled, public key authentication enabled
+```text
+LISTEN 0 4096 0.0.0.0:22 0.0.0.0:* users:(("sshd",pid=1001,fd=3))
+```
 
-## Notes
+## SUID/SGID files
 
-Findings must be reviewed by an administrator. The scripts do not automatically change system configuration.
+```text
+/usr/bin/passwd
+/usr/bin/sudo
+```
+
+## Review notes
+
+These findings require human review. They are not automatically vulnerabilities.

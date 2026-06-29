@@ -1,6 +1,6 @@
-# Security Audit Helpers
+# Security audit
 
-These scripts are read-only helpers. They are not a replacement for a full professional security audit, but they provide a useful starting point for Linux host review.
+Security audit scripts in this repository are read-only by default. They make typical Linux risks visible but do not automatically fix them.
 
 ## Included scripts
 
@@ -9,16 +9,13 @@ These scripts are read-only helpers. They are not a replacement for a full profe
 - `scripts/security/sasd-world-writable-audit.sh`
 - `scripts/security/sasd-ssh-baseline-check.sh`
 
-## Suggested first run
+## Review guidance
 
-```bash
-mkdir -p reports
-bash scripts/security/sasd-open-ports-audit.sh > reports/open-ports.md
-bash scripts/security/sasd-suid-sgid-audit.sh /usr /bin /sbin > reports/suid-sgid.md
-bash scripts/security/sasd-world-writable-audit.sh /tmp /var/tmp /usr /opt > reports/world-writable.md
-bash scripts/security/sasd-ssh-baseline-check.sh > reports/ssh-baseline.md
-```
+Not every finding is automatically a vulnerability. Findings are starting points for human review.
 
-## Interpretation
+Examples:
 
-Findings are indicators. They need human review. For example, SUID files are not automatically bad, but unexpected SUID files are worth investigating.
+- A listening service may be required.
+- A SUID binary may be normal for the distribution.
+- A world-writable directory may be safe when the sticky bit is set.
+- SSH settings must be evaluated against operational requirements.

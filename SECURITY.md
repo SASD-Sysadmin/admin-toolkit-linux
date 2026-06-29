@@ -1,32 +1,18 @@
 # Security Policy
 
-## Intended use
+## Supported use
 
-This repository contains administrative scripts and examples for Linux systems. They are intended for lab systems, small-company operations and learning.
+This repository contains examples, scripts and documentation for Linux administration. Most scripts are intended to be read-only and safe for lab or small-company review scenarios.
 
-Use them only on systems you own or are explicitly allowed to administer.
+Use scripts only on systems you own or are explicitly allowed to administer.
 
-## Secrets policy
+## Reporting a vulnerability
 
-Do not commit:
+If you find a security issue in this repository, please open a GitHub issue with a minimal, sanitized description. Do not include secrets, credentials, private keys, customer data or sensitive production details.
 
-- passwords
-- SSH private keys
-- API tokens
-- customer names
-- real internal IP address ranges
-- production hostnames
-- database credentials
-- `.env` files with real values
+## Safety principles
 
-Use sanitized examples under `examples/`.
-
-## Script safety baseline
-
-Scripts should be read-only by default. Scripts that modify systems must require an explicit option such as `--apply` and must document exactly what they change.
-
-Security audit scripts must not delete files, change permissions, restart services or alter firewall rules unless that behavior is explicitly requested and documented.
-
-## Reporting vulnerabilities
-
-Open a private security report where possible or contact the repository owner through the published GitHub profile.
+- Scripts should be readable before they are clever.
+- Scripts should be read-only by default.
+- Potentially disruptive behavior must be opt-in and documented.
+- No secrets, customer data or internal production data belong in this repository.

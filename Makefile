@@ -1,15 +1,17 @@
 SHELL := /usr/bin/env bash
 
-.PHONY: test syntax shellcheck tree
-
-test: syntax
-	@echo "Basic tests completed."
+.PHONY: syntax shellcheck markdownlint test
 
 syntax:
-	@find scripts -type f -name '*.sh' -print0 | while IFS= read -r -d '' file; do echo "bash -n $$file"; bash -n "$$file"; done
+	find scripts -type f -name '*.sh' -print0 | while IFS= read -r -d '' file; do \
+		echo "bash -n $$file"; \
+		bash -n "$$file"; \
+	done
 
 shellcheck:
-	@shellcheck scripts/**/*.sh
+	find scripts -type f -name '*.sh' -print0 | xargs -0 shellcheck
 
-tree:
-	@find . -not -path './.git/*' | sort
+markdownlint:
+	markdownlint-cli2 '**/*.md'
+
+test: syntax

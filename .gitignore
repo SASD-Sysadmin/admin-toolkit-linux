@@ -1,18 +1,14 @@
-# Local output
-out/
+# Local reports and temporary output
 reports/
 *.log
 *.tmp
+*.bak
 
-# Secrets / local configuration
-.env
-*.key
-*.pem
-id_rsa
-id_ed25519
-
-# OS/editor
-.DS_Store
-Thumbs.db
+# Editor files
 .vscode/
 .idea/
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

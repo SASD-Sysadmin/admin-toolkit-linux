@@ -1,12 +1,11 @@
 # Changelog
 
-## 0.1.0 - 2026-06-29
+All notable changes to this project will be documented in this file.
 
-Initial starter structure:
+## Unreleased
 
-- host documentation scripts
-- read-only security audit scripts
-- logging helper
-- monitoring plugin examples
-- repository documentation
-- GitHub Actions workflow for shell syntax and ShellCheck when available
+- Add initial Linux administration script toolbox.
+- Add host documentation scripts.
+- Add read-only security audit scripts.
+- Add logging and monitoring helper scripts.
+- Add repository roadmap and contribution workflow.

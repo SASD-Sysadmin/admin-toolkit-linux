@@ -17,18 +17,35 @@ No system changes are made.
 EOF
 }
 
-if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then usage; exit 0; fi
-if [[ "${1:-}" == "--version" ]]; then echo "$VERSION"; exit 0; fi
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  usage
+  exit 0
+fi
 
-command_exists() { command -v "$1" >/dev/null 2>&1; }
-section() { printf '\n## %s\n\n' "$1"; }
-code_block() { printf '```text\n'; cat; printf '```\n'; }
-value_or_unknown() { local value="${1:-}"; [[ -n "$value" ]] && printf '%s' "$value" || printf 'unknown'; }
+if [[ "${1:-}" == "--version" ]]; then
+  echo "$VERSION"
+  exit 0
+fi
+
+command_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+section() {
+  printf '\n## %s\n\n' "$1"
+}
+
+code_block() {
+  printf '```text\n'
+  cat
+  printf '```\n'
+}
 
 hostname_short="$(hostname 2>/dev/null || true)"
 hostname_fqdn="$(hostname -f 2>/dev/null || true)"
 os_name="unknown"
 os_version="unknown"
+
 if [[ -r /etc/os-release ]]; then
   # shellcheck disable=SC1091
   . /etc/os-release
@@ -37,15 +54,16 @@ if [[ -r /etc/os-release ]]; then
 fi
 
 cat <<EOF
-# SASD Host Inventory
+# Host Inventory
 
-| Key | Value |
+Generated: $(date -Is 2>/dev/null || date)
+
+| Field | Value |
 | --- | --- |
-| Generated UTC | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |
-| Hostname | $(value_or_unknown "$hostname_short") |
-| FQDN | $(value_or_unknown "$hostname_fqdn") |
+| Hostname | ${hostname_short:-unknown} |
+| FQDN | ${hostname_fqdn:-unknown} |
 | OS | ${os_name} |
-| OS Version | ${os_version} |
+| OS version | ${os_version} |
 | Kernel | $(uname -r 2>/dev/null || echo unknown) |
 | Architecture | $(uname -m 2>/dev/null || echo unknown) |
 | User | $(id -un 2>/dev/null || echo unknown) |

@@ -1,13 +1,19 @@
 name: Documentation task
-description: Improve repository documentation
+description: Improve documentation, examples or runbooks
 title: "docs: "
 labels:
   - documentation
 body:
   - type: textarea
-    id: documentation-change
+    id: task
     attributes:
-      label: Documentation change
-      description: What should be added or improved?
+      label: Documentation task
+      description: What should be documented or improved?
     validations:
       required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Add context, links or constraints.

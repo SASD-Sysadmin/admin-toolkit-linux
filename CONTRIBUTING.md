@@ -31,7 +31,9 @@ shellcheck path/to/script.sh
 
 ## Documentation requirements
 
-Markdown should be readable in GitHub and pass the repository Markdown lint workflow. Keep examples sanitized and avoid production-specific data.
+Markdown should be readable in GitHub and pass the repository Markdown lint workflow.
+
+Keep examples sanitized and avoid production-specific data.
 
 ## Pull requests
 
