@@ -4,7 +4,7 @@ Readable, conservative Linux administration scripts and documentation for small-
 
 This repository is part of the SASD `admin-toolkit-*` repository family. It focuses on Linux hosts first. Other Unix-like systems such as FreeBSD, macOS, Solaris, OpenBSD or AIX should get their own repositories later when there is enough material to make them useful and maintainable.
 
-The repository starts as a focused sysadmin toolbox. It is intentionally small at the beginning and grows in well-documented phases.
+The repository starts as a focused sysadmin toolbox. It is intentionally small enough to review, but useful enough to run on real lab or small-business Linux hosts.
 
 ## Scope
 
@@ -14,12 +14,16 @@ Current focus:
 - read-only security audit helpers
 - Linux log and service review
 - simple monitoring plugin examples
+- account and configuration baselines
+- file integrity baseline checks
+- read-only report collection for repeatable local audits
 - documentation patterns for repeatable administration
 
 Later focus:
 
-- file integrity monitoring
-- backup and restore validation
+- deeper service-specific checks
+- firewall and auditd reporting
+- backup restore test documentation
 - Ansible-based baseline configuration
 - DNS, database and SNMP reporting helpers
 
@@ -34,60 +38,129 @@ Later focus:
 - safe output formats for audits and examples
 - small tools that can be reviewed before execution
 
+## Quick start
+
+Run a syntax check for all shell scripts:
+
+```bash
+make syntax
+```
+
+Run the local validation checks:
+
+```bash
+make check
+```
+
+Create a read-only report collection for the current host:
+
+```bash
+./scripts/reporting/sasd-run-readonly-checks.sh --output ./reports/local-test
+```
+
+Create a read-only report collection including summary reports:
+
+```bash
+./scripts/reporting/sasd-run-readonly-checks.sh --include-summary
+```
+
+Generated reports are intentionally written below `reports/`, which is ignored by Git.
+
 ## Repository layout
 
 ```text
 scripts/
-  host-doc/       Host inventory and documentation helpers
-  security/       Read-only security audit scripts
-  logging/        Journal and log review helpers
-  monitoring/     Monitoring plugin examples
+  accounts/       Local account baselines and baseline comparisons
+  backup/         Backup age checks and rsync snapshot helper
+  config/         Configuration reports for sshd, sudoers, journald, logrotate
+  filesystem/     Filesystem and open-deleted-file reports
+  host-doc/       Host, service and package inventory
+  logging/        Journal and authentication log review helpers
+  monitoring/     Simple monitoring-plugin-style checks
+  network/        DNS and listening-service reports
+  packages/       Package update and reboot-required reports
+  reporting/      Summary and collection scripts
+  security/       Read-only security audit helpers
 
-docs/             Concepts, safety notes and usage guidance
-examples/         Sanitized example output
-.github/          CI checks, issue templates and contribution workflow
+docs/             Documentation, runbooks and usage notes
+examples/         Example outputs and sample baselines
+reports/          Local generated reports, ignored by Git
 ```
 
-## Quick start
+## Script index
 
-Run a host inventory:
+A detailed script index is available in [docs/script-index.md](docs/script-index.md).
+
+| Category | Script | Purpose |
+| --- | --- | --- |
+| Accounts | `scripts/accounts/sasd-account-baseline.sh` | Export a local account/group baseline without password hashes. |
+| Accounts | `scripts/accounts/sasd-account-diff.sh` | Compare two account baselines. |
+| Backup | `scripts/backup/sasd-backup-age-check.sh` | Check whether matching backup files exist and are recent enough. |
+| Backup | `scripts/backup/sasd-rsync-snapshot.sh` | Conservative rsync snapshot helper, dry-run by default. |
+| Config | `scripts/config/sasd-journald-config-report.sh` | Review journald configuration and journal directory state. |
+| Config | `scripts/config/sasd-logrotate-report.sh` | Review logrotate policy and drop-in configuration. |
+| Config | `scripts/config/sasd-sshd-config-report.sh` | Report OpenSSH server configuration when available. |
+| Config | `scripts/config/sasd-sudoers-report.sh` | Validate and review sudoers configuration. |
+| Filesystem | `scripts/filesystem/sasd-deleted-open-files.sh` | Find deleted files that are still held open by processes. |
+| Filesystem | `scripts/filesystem/sasd-disk-usage-report.sh` | Report disk usage and largest filesystem areas. |
+| Host documentation | `scripts/host-doc/sasd-host-inventory.sh` | Generate a basic host inventory report. |
+| Host documentation | `scripts/host-doc/sasd-package-inventory.sh` | List installed packages. |
+| Host documentation | `scripts/host-doc/sasd-service-inventory.sh` | List system services where supported. |
+| Logging | `scripts/logging/sasd-auth-log-report.sh` | Summarize authentication log signals. |
+| Logging | `scripts/logging/sasd-journal-errors.sh` | Review recent journal warnings/errors. |
+| Monitoring | `scripts/monitoring/check_certificate_expiry.sh` | Monitoring-style certificate expiry check. |
+| Monitoring | `scripts/monitoring/check_disk_usage.sh` | Monitoring-style disk usage check. |
+| Monitoring | `scripts/monitoring/check_reboot_required.sh` | Monitoring-style reboot-required check. |
+| Monitoring | `scripts/monitoring/check_service_active.sh` | Monitoring-style service active check. |
+| Network | `scripts/network/sasd-forward-reverse-dns-check.sh` | Check forward/reverse DNS consistency for hostnames. |
+| Network | `scripts/network/sasd-listening-services-report.sh` | Report listening TCP/UDP services and bind scope. |
+| Packages | `scripts/packages/sasd-reboot-required-report.sh` | Report common reboot-required indicators. |
+| Packages | `scripts/packages/sasd-update-status-report.sh` | Report package update status for supported package managers. |
+| Reporting | `scripts/reporting/sasd-admin-summary.sh` | Generate a Markdown admin summary from selected checks. |
+| Reporting | `scripts/reporting/sasd-run-readonly-checks.sh` | Run a read-only check collection and create an index. |
+| Reporting | `scripts/reporting/sasd-security-summary.sh` | Generate a Markdown security summary from selected checks. |
+| Security | `scripts/security/sasd-fim-baseline.sh` | Create a file integrity baseline. |
+| Security | `scripts/security/sasd-fim-check.sh` | Compare current files against a FIM baseline. |
+| Security | `scripts/security/sasd-open-ports-audit.sh` | Report listening ports and related process data. |
+| Security | `scripts/security/sasd-sensitive-files-check.sh` | Check permissions of sensitive system files. |
+| Security | `scripts/security/sasd-ssh-baseline-check.sh` | Compare readable SSH server config with a small baseline. |
+| Security | `scripts/security/sasd-suid-sgid-audit.sh` | List SUID/SGID files. |
+| Security | `scripts/security/sasd-system-accounts-audit.sh` | Identify suspicious local system account properties. |
+| Security | `scripts/security/sasd-world-writable-audit.sh` | Report world-writable filesystem entries with filtering. |
+
+## Local validation
+
+Useful local checks:
 
 ```bash
-bash scripts/host-doc/sasd-host-inventory.sh
+make list-scripts
+make syntax
+make check
 ```
 
-Run basic security checks:
+Optional smoke test:
 
 ```bash
-bash scripts/security/sasd-open-ports-audit.sh
-bash scripts/security/sasd-suid-sgid-audit.sh /usr /bin /sbin
-bash scripts/security/sasd-ssh-baseline-check.sh
+make smoke
 ```
 
-Run monitoring checks:
-
-```bash
-bash scripts/monitoring/check_service_active.sh ssh
-bash scripts/monitoring/check_reboot_required.sh
-bash scripts/monitoring/check_certificate_expiry.sh example.com 443 30
-```
-
-## Roadmap
-
-The project roadmap is tracked in [ROADMAP.md](ROADMAP.md).
-
-The first milestone is a trustworthy Linux host documentation and read-only security audit baseline. Configuration-changing automation will only be added after the audit scripts, examples and safety documentation are solid.
+The smoke test writes a local report below `reports/` and does not commit generated output.
 
 ## Safety
 
-Most scripts are read-only and intended for documentation, review and learning. Use them only on systems you own or are explicitly allowed to administer. Review every script before running it with elevated privileges.
+The scripts are designed for read-only administration and audit-style review. They do not prove compliance, do not replace a professional security audit and should not be run blindly on production systems without review.
 
-See [docs/script-safety.md](docs/script-safety.md).
+Before sharing generated reports, review them for hostnames, usernames, paths, package names, service names, IP addresses and environment-specific details.
 
-## Contributing
+## Documentation
 
-Contributions should keep the repository conservative, readable and safe by default. See [CONTRIBUTING.md](CONTRIBUTING.md).
+- [docs/script-index.md](docs/script-index.md)
+- [docs/testing.md](docs/testing.md)
+- [docs/run-readonly-checks.md](docs/run-readonly-checks.md)
+- [docs/world-writable-audit.md](docs/world-writable-audit.md)
+- [docs/repository-strategy.md](docs/repository-strategy.md)
+- [docs/script-safety.md](docs/script-safety.md)
 
 ## Status
 
-Initial public starter version. The first goal is to build a trustworthy baseline of small, tested scripts before adding configuration-changing automation.
+This repository is an early but usable Linux administration toolkit. The current focus is to keep the scripts understandable, conservative and useful for real local review runs.

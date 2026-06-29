@@ -1,14 +1,25 @@
-# Local reports and temporary output
-reports/
-*.log
+# Generated local reports
+/reports/*
+!/reports/.gitkeep
+
+# Temporary files
+/tmp/
+/*.tmp
 *.tmp
 *.bak
-
-# Editor files
-.vscode/
-.idea/
+*.swp
 *~
 
-# OS files
+# Local logs
+*.log
+
+# OS/editor noise
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
+
+# Python/cache noise if helper tooling is added later
+__pycache__/
+*.pyc
+.pytest_cache/
