@@ -1,0 +1,6 @@
+record_type	name	id	primary_or_members	home	shell	password_status
+group	adm	4	syslog	-	-	-
+group	sudo	27	robin	-	-	-
+user	root	0	0	/root	/bin/bash	locked
+user	robin	1000	1000	/home/robin	/bin/bash	set
+user	www-data	33	33	/var/www	/usr/sbin/nologin	locked
