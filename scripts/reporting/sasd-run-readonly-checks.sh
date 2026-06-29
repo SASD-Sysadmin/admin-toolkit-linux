@@ -1,251 +1,189 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # File: scripts/reporting/sasd-run-readonly-checks.sh
-# Purpose: Run a curated set of read-only SASD Linux admin checks and collect
-#          their output into one timestamped report directory.
 # Project: admin-toolkit-linux
+# Purpose: Run a curated set of read-only checks and write report files.
 # License: MIT
 # -----------------------------------------------------------------------------
 # Safety model
 # ------------
-# This script is intentionally a collector, not a repair tool. It only calls
-# read-only scripts from this repository and stores their stdout/stderr in files.
-# It does not change system configuration, stop/start services, install packages,
-# remove files, or modify permissions.
-#
-# Why this script exists
-# ----------------------
-# A toolbox with many small scripts is useful, but operational work often needs a
-# repeatable "run the safe checks and give me a folder with results" entry point.
-# This wrapper makes that possible while keeping the individual scripts readable
-# and independently usable.
-#
-# Output strategy
-# ---------------
-# The collector runs direct checks by default. Top-level summary scripts are not
-# run unless --include-summary is provided, because they call many of the same
-# child scripts again and can easily duplicate output. This keeps the default
-# report set compact enough for review.
+# This collector only calls scripts that are designed to be read-only. It writes
+# output files into a report directory. It does not modify system configuration.
 # -----------------------------------------------------------------------------
 
 set -u
 set -o pipefail
 
 SCRIPT_NAME="$(basename "$0")"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-HOSTNAME_SHORT="$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo unknown-host)"
-TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
-DEFAULT_OUTPUT="$REPO_ROOT/reports/${HOSTNAME_SHORT}-${TIMESTAMP}"
-OUTPUT_DIR="$DEFAULT_OUTPUT"
-TIMEOUT_SECONDS="120"
-INCLUDE_SLOW="no"
-INCLUDE_SUMMARY="no"
-WORLD_WRITABLE_MAX="500"
+OUTPUT_DIR=""
+INCLUDE_SUMMARY=0
 
-show_help() {
-    cat <<HELP
-Usage: $SCRIPT_NAME [OPTIONS]
-
-Run selected read-only admin checks and collect their output.
+usage() {
+  cat <<'USAGE'
+Usage:
+  sasd-run-readonly-checks.sh [options]
 
 Options:
-  --output DIR              Write report files to DIR.
-                            Default: reports/<host>-<timestamp>
-  --timeout SECONDS         Per-command timeout when timeout(1) exists.
-                            Default: 120
-  --include-slow            Also run slower checks that may walk larger trees.
-  --include-summary         Also run summary scripts that duplicate several
-                            child checks but provide human-readable overviews.
-  --world-writable-max N    Limit world-writable findings in the collected run.
-                            Default: 500
-  -h, --help                Show this help text.
+  --output DIR        Write reports to DIR.
+  --include-summary   Also run verbose admin/security summary reports.
+  -h, --help          Show this help.
 
 Examples:
-  ./$SCRIPT_NAME
-  ./$SCRIPT_NAME --output /tmp/sasd-report-dev102
-  ./$SCRIPT_NAME --include-summary --output ./reports/full-check
-  ./$SCRIPT_NAME --include-slow --world-writable-max 1000
-
-Exit codes:
-  0  Collector finished. Review INDEX.md for individual command statuses.
-  2  Invalid command-line arguments or output directory problem.
-HELP
+  ./scripts/reporting/sasd-run-readonly-checks.sh
+  ./scripts/reporting/sasd-run-readonly-checks.sh --output ./reports/dev102-test
+  ./scripts/reporting/sasd-run-readonly-checks.sh --include-summary
+USAGE
 }
 
-fail() {
-    printf 'ERROR: %s\n' "$*" >&2
-    exit 2
-}
+log_error() { printf 'ERROR: %s\n' "$*" >&2; }
 
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --output)
-            [[ $# -ge 2 ]] || fail "--output requires a directory argument"
-            OUTPUT_DIR="$2"
-            shift 2
-            ;;
-        --timeout)
-            [[ $# -ge 2 ]] || fail "--timeout requires a numeric argument"
-            [[ "$2" =~ ^[0-9]+$ ]] || fail "--timeout must be numeric"
-            TIMEOUT_SECONDS="$2"
-            shift 2
-            ;;
-        --include-slow)
-            INCLUDE_SLOW="yes"
-            shift
-            ;;
-        --include-summary)
-            INCLUDE_SUMMARY="yes"
-            shift
-            ;;
-        --world-writable-max)
-            [[ $# -ge 2 ]] || fail "--world-writable-max requires a numeric argument"
-            [[ "$2" =~ ^[0-9]+$ ]] || fail "--world-writable-max must be numeric"
-            WORLD_WRITABLE_MAX="$2"
-            shift 2
-            ;;
-        -h|--help)
-            show_help
-            exit 0
-            ;;
-        *)
-            fail "unknown option: $1"
-            ;;
-    esac
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --output)
+      [ "$#" -ge 2 ] || { log_error "--output requires a value"; exit 2; }
+      OUTPUT_DIR="$2"
+      shift 2
+      ;;
+    --include-summary)
+      INCLUDE_SUMMARY=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      log_error "unknown argument: $1"
+      usage >&2
+      exit 2
+      ;;
+  esac
 done
 
-mkdir -p "$OUTPUT_DIR" || fail "cannot create output directory: $OUTPUT_DIR"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+HOSTNAME_VALUE="$(hostname -s 2>/dev/null || hostname 2>/dev/null || printf 'unknown')"
+STAMP="$(date +%Y%m%d-%H%M%S)"
+if [ -z "$OUTPUT_DIR" ]; then
+  OUTPUT_DIR="$REPO_ROOT/reports/${HOSTNAME_VALUE}-${STAMP}"
+fi
 
-INDEX_FILE="$OUTPUT_DIR/INDEX.md"
+mkdir -p "$OUTPUT_DIR" || { log_error "cannot create output directory: $OUTPUT_DIR"; exit 2; }
 STATUS_FILE="$OUTPUT_DIR/status.tsv"
+INDEX_FILE="$OUTPUT_DIR/INDEX.md"
+: > "$STATUS_FILE"
+printf 'status\tscript\toutput\n' > "$STATUS_FILE"
 
-cat > "$INDEX_FILE" <<HEADER
+run_report() {
+  local output_file="$1"
+  local script="$2"
+  shift 2
+  local rel_script="${script#$REPO_ROOT/}"
+  local status
+
+  if [ ! -x "$script" ]; then
+    printf '127\t%s\t%s\n' "$rel_script" "$output_file" >> "$STATUS_FILE"
+    {
+      printf 'ERROR: script not executable or missing: %s\n' "$rel_script"
+    } > "$OUTPUT_DIR/$output_file"
+    return
+  fi
+
+  set +e
+  "$script" "$@" > "$OUTPUT_DIR/$output_file" 2>&1
+  status=$?
+  set -e 2>/dev/null || true
+  printf '%s\t%s\t%s\n' "$status" "$rel_script" "$output_file" >> "$STATUS_FILE"
+}
+
+# Host documentation
+run_report "01-host-inventory.md"             "$REPO_ROOT/scripts/host-doc/sasd-host-inventory.sh"
+run_report "02-service-inventory.md"          "$REPO_ROOT/scripts/host-doc/sasd-service-inventory.sh"
+run_report "03-package-inventory.md"          "$REPO_ROOT/scripts/host-doc/sasd-package-inventory.sh"
+
+# Filesystem and backup/reliability
+run_report "10-disk-usage.md"                 "$REPO_ROOT/scripts/filesystem/sasd-disk-usage-report.sh"
+run_report "11-deleted-open-files.md"         "$REPO_ROOT/scripts/filesystem/sasd-deleted-open-files.sh"
+run_report "12-backup-age-check.md"           "$REPO_ROOT/scripts/backup/sasd-backup-age-check.sh" --path "$REPO_ROOT" --pattern '*.md' --max-age-days 90
+
+# Configuration and scheduling
+run_report "20-sshd-config.md"                "$REPO_ROOT/scripts/config/sasd-sshd-config-report.sh"
+run_report "21-sudoers.md"                    "$REPO_ROOT/scripts/config/sasd-sudoers-report.sh"
+run_report "22-journald-config.md"            "$REPO_ROOT/scripts/config/sasd-journald-config-report.sh"
+run_report "23-logrotate.md"                  "$REPO_ROOT/scripts/config/sasd-logrotate-report.sh"
+run_report "24-cron.md"                       "$REPO_ROOT/scripts/config/sasd-cron-report.sh"
+run_report "25-systemd-timers.md"             "$REPO_ROOT/scripts/config/sasd-systemd-timers-report.sh"
+run_report "26-browser-repos.md"              "$REPO_ROOT/scripts/config/sasd-browser-repo-report.sh"
+
+# Network and security controls
+run_report "30-open-ports.md"                 "$REPO_ROOT/scripts/security/sasd-open-ports-audit.sh"
+run_report "31-listening-services.md"         "$REPO_ROOT/scripts/network/sasd-listening-services-report.sh"
+run_report "32-ssh-baseline.md"               "$REPO_ROOT/scripts/security/sasd-ssh-baseline-check.sh"
+run_report "33-system-accounts.md"            "$REPO_ROOT/scripts/security/sasd-system-accounts-audit.sh"
+run_report "34-account-baseline.tsv"          "$REPO_ROOT/scripts/accounts/sasd-account-baseline.sh"
+run_report "35-suid-sgid.md"                  "$REPO_ROOT/scripts/security/sasd-suid-sgid-audit.sh"
+run_report "36-world-writable.md"             "$REPO_ROOT/scripts/security/sasd-world-writable-audit.sh"
+run_report "37-sensitive-files.md"            "$REPO_ROOT/scripts/security/sasd-sensitive-files-check.sh"
+run_report "38-permission-risk.md"            "$REPO_ROOT/scripts/security/sasd-permission-risk-report.sh"
+run_report "39-root-owned-writable.md"        "$REPO_ROOT/scripts/security/sasd-root-owned-writable-report.sh"
+run_report "42-firewall-status.md"            "$REPO_ROOT/scripts/security/sasd-firewall-status-report.sh"
+run_report "43-auditd-status.md"              "$REPO_ROOT/scripts/security/sasd-auditd-status-report.sh"
+
+# Logs and package state
+run_report "40-journal-errors.md"             "$REPO_ROOT/scripts/logging/sasd-journal-errors.sh"
+run_report "41-auth-log.md"                   "$REPO_ROOT/scripts/logging/sasd-auth-log-report.sh"
+run_report "50-update-status.md"              "$REPO_ROOT/scripts/packages/sasd-update-status-report.sh"
+run_report "51-reboot-required.md"            "$REPO_ROOT/scripts/packages/sasd-reboot-required-report.sh"
+
+# Database inventories
+run_report "80-mariadb-inventory.md"          "$REPO_ROOT/scripts/database/sasd-mariadb-inventory.sh"
+run_report "81-postgresql-inventory.md"       "$REPO_ROOT/scripts/database/sasd-postgresql-inventory.sh"
+
+# Compact findings summary is intentionally included by default. It is compact
+# and avoids duplicating large child reports.
+run_report "89-findings-summary.md"           "$REPO_ROOT/scripts/reporting/sasd-findings-summary.sh"
+
+# Verbose summaries are useful but can duplicate large amounts of output. Keep
+# them opt-in so smoke tests and normal collection remain reviewable.
+if [ "$INCLUDE_SUMMARY" -eq 1 ]; then
+  run_report "90-admin-summary.md"            "$REPO_ROOT/scripts/reporting/sasd-admin-summary.sh"
+  run_report "91-security-summary.md"         "$REPO_ROOT/scripts/reporting/sasd-security-summary.sh"
+fi
+
+GENERATED_AT="$(date -Iseconds)"
+{
+  cat <<HEADER
 # SASD Read-only Check Collection
 
-- Generated: $(date -Is)
-- Host: ${HOSTNAME_SHORT}
-- Repository root: \`${REPO_ROOT}\`
-- Output directory: \`${OUTPUT_DIR}\`
+- Generated: $GENERATED_AT
+- Host: $HOSTNAME_VALUE
+- Repository root: \`$REPO_ROOT\`
+- Output directory: \`$OUTPUT_DIR\`
 
 > This collection was generated by read-only toolkit scripts. Review all output
-> before sharing it publicly because reports can contain environment details.
+> before sharing it publicly because reports can contain hostnames, usernames,
+> package names, IP addresses, paths or other environment details.
 
 ## Command status
 
 | Status | Script | Output |
 | ---: | --- | --- |
 HEADER
-
-printf 'status\tscript\toutput\n' > "$STATUS_FILE"
-
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-run_script() {
-    local relative_script="$1"
-    local output_name="$2"
-    shift 2
-
-    local script_path="$REPO_ROOT/$relative_script"
-    local output_path="$OUTPUT_DIR/$output_name"
-    local status=0
-    local command_args=("$@")
-
-    if [[ ! -x "$script_path" ]]; then
-        printf 'SKIP: %s is not executable or not present\n' "$relative_script" > "$output_path"
-        printf '| SKIP | `%s` | [`%s`](%s) |\n' "$relative_script" "$output_name" "$output_name" >> "$INDEX_FILE"
-        printf 'SKIP\t%s\t%s\n' "$relative_script" "$output_name" >> "$STATUS_FILE"
-        return 0
-    fi
-
-    {
-        printf '# %s\n\n' "$relative_script"
-        printf 'Generated: %s\n' "$(date -Is)"
-        printf 'Command: %s' "$script_path"
-        if [[ ${#command_args[@]} -gt 0 ]]; then
-            printf ' %q' "${command_args[@]}"
-        fi
-        printf '\n\n'
-        printf -- '--- output begins ---\n\n'
-    } > "$output_path"
-
-    if command_exists timeout; then
-        timeout "$TIMEOUT_SECONDS" "$script_path" "${command_args[@]}" >> "$output_path" 2>&1
-        status=$?
-    else
-        "$script_path" "${command_args[@]}" >> "$output_path" 2>&1
-        status=$?
-    fi
-
-    {
-        printf '\n--- output ends ---\n'
-        printf 'Exit status: %s\n' "$status"
-    } >> "$output_path"
-
-    printf '| %s | `%s` | [`%s`](%s) |\n' "$status" "$relative_script" "$output_name" "$output_name" >> "$INDEX_FILE"
-    printf '%s\t%s\t%s\n' "$status" "$relative_script" "$output_name" >> "$STATUS_FILE"
-}
-
-# Host documentation.
-run_script "scripts/host-doc/sasd-host-inventory.sh" "01-host-inventory.md"
-run_script "scripts/host-doc/sasd-service-inventory.sh" "02-service-inventory.md"
-run_script "scripts/host-doc/sasd-package-inventory.sh" "03-package-inventory.md"
-
-# Filesystem and process/file-handle review.
-run_script "scripts/filesystem/sasd-disk-usage-report.sh" "10-disk-usage.md"
-run_script "scripts/filesystem/sasd-deleted-open-files.sh" "11-deleted-open-files.md"
-
-# Configuration review.
-run_script "scripts/config/sasd-sshd-config-report.sh" "20-sshd-config.md"
-run_script "scripts/config/sasd-sudoers-report.sh" "21-sudoers.md"
-run_script "scripts/config/sasd-journald-config-report.sh" "22-journald-config.md"
-run_script "scripts/config/sasd-logrotate-report.sh" "23-logrotate.md"
-run_script "scripts/config/sasd-cron-report.sh" "24-cron.md"
-run_script "scripts/config/sasd-systemd-timers-report.sh" "25-systemd-timers.md"
-
-# Security and account review.
-run_script "scripts/security/sasd-open-ports-audit.sh" "30-open-ports.md"
-run_script "scripts/network/sasd-listening-services-report.sh" "31-listening-services.md"
-run_script "scripts/security/sasd-ssh-baseline-check.sh" "32-ssh-baseline.md"
-run_script "scripts/security/sasd-system-accounts-audit.sh" "33-system-accounts.md"
-run_script "scripts/accounts/sasd-account-baseline.sh" "34-account-baseline.tsv"
-run_script "scripts/security/sasd-suid-sgid-audit.sh" "35-suid-sgid.md"
-run_script "scripts/security/sasd-world-writable-audit.sh" "36-world-writable.md" --max-results "$WORLD_WRITABLE_MAX"
-run_script "scripts/security/sasd-sensitive-files-check.sh" "37-sensitive-files.md"
-run_script "scripts/security/sasd-firewall-status-report.sh" "38-firewall.md"
-run_script "scripts/security/sasd-auditd-status-report.sh" "39-auditd.md"
-
-# Logging and package/reboot state.
-run_script "scripts/logging/sasd-journal-errors.sh" "40-journal-errors.md"
-run_script "scripts/logging/sasd-auth-log-report.sh" "41-auth-log.md"
-run_script "scripts/packages/sasd-update-status-report.sh" "50-update-status.md"
-run_script "scripts/packages/sasd-reboot-required-report.sh" "51-reboot-required.md"
-run_script "scripts/database/sasd-mariadb-inventory.sh" "52-mariadb-inventory.md"
-
-if [[ "$INCLUDE_SUMMARY" == "yes" ]]; then
-    # Summary reports call other scripts and can be longer. They are useful as a
-    # human-readable top-level view, but they duplicate several direct outputs.
-    run_script "scripts/reporting/sasd-admin-summary.sh" "90-admin-summary.md"
-    run_script "scripts/reporting/sasd-security-summary.sh" "91-security-summary.md"
-fi
-
-if [[ "$INCLUDE_SLOW" == "yes" ]]; then
-    run_script "scripts/security/sasd-fim-baseline.sh" "95-fim-baseline.tsv"
-fi
-
-cat >> "$INDEX_FILE" <<FOOTER
+  tail -n +2 "$STATUS_FILE" | while IFS=$'\t' read -r status script output; do
+    printf '| %s | `%s` | [`%s`](%s) |\n' "$status" "$script" "$output" "$output"
+  done
+  cat <<'FOOTER'
 
 ## Notes
 
 - Exit status 0 usually means OK or informational output.
 - Exit status 1 can mean findings were detected by an audit script.
 - Exit status 2 or higher usually means an execution problem or missing prerequisite.
-- Summary reports are excluded by default to avoid duplicated output. Use \`--include-summary\` when wanted.
+- Verbose summary reports are excluded by default to avoid duplicated output. Use `--include-summary` when wanted.
 - Review each report before sharing it outside your environment.
 FOOTER
+} > "$INDEX_FILE"
 
 printf 'Report directory: %s\n' "$OUTPUT_DIR"
 printf 'Index: %s\n' "$INDEX_FILE"
+
 exit 0
