@@ -1,0 +1,3 @@
+# sasd-fim-baseline version=0.2.0 generated=2026-06-29T08:00:00+02:00
+# fields: sha256 mode owner group size mtime_epoch path
+0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef	644	root	root	128	1782712800	/etc/hosts
