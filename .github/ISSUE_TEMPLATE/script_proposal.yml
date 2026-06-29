@@ -1,0 +1,53 @@
+name: Script proposal
+description: Propose a new Linux administration script or check
+title: "script: "
+labels: ["enhancement", "script"]
+body:
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Purpose
+      description: What should the script do?
+      placeholder: "Example: Report local system accounts with interactive login shells."
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - host-doc
+        - filesystem
+        - accounts
+        - activity
+        - config
+        - security
+        - logging
+        - monitoring
+        - network
+        - database
+        - backup
+        - reporting
+        - documentation
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety considerations
+      description: Explain whether the script is read-only, needs root, or has risks.
+      placeholder: "Read-only by default. Root improves visibility but is not mandatory."
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Expected output
+      description: Describe the preferred output format.
+      placeholder: "Human-readable table; optional JSON later."
+  - type: textarea
+    id: references
+    attributes:
+      label: References or related commands
+      placeholder: "find, ss, systemctl, journalctl, passwd, login.defs, ..."

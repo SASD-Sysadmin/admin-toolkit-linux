@@ -1,0 +1,25 @@
+name: Documentation task
+description: Improve README, docs, examples or runbooks
+title: "docs: "
+labels: ["documentation"]
+body:
+  - type: textarea
+    id: target
+    attributes:
+      label: Documentation target
+      description: Which document or section should be improved?
+      placeholder: "docs/security-audit.md"
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: Proposed change
+      description: What should be added, removed or clarified?
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: Reason
+      description: Why is this useful for users or maintainers?

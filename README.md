@@ -1,8 +1,10 @@
-# SASD-SysAdmin
+# admin-toolkit-linux
 
 Readable, conservative Linux administration scripts and documentation for small-company operations, lab systems and portfolio use.
 
-This repository starts as a focused sysadmin toolbox. It is intentionally small at the beginning and grows in well-documented phases.
+This repository is part of the SASD `admin-toolkit-*` repository family. It focuses on Linux hosts first. Other Unix-like systems such as FreeBSD, macOS, Solaris, OpenBSD or AIX should get their own repositories later when there is enough material to make them useful and maintainable.
+
+The repository starts as a focused sysadmin toolbox. It is intentionally small at the beginning and grows in well-documented phases.
 
 ## Scope
 
@@ -30,6 +32,7 @@ Later focus:
 - no secrets, no customer data, no internal IP addresses
 - changes only with explicit `--apply`, where supported
 - safe output formats for audits and examples
+- small tools that can be reviewed before execution
 
 ## Repository layout
 
@@ -42,7 +45,7 @@ scripts/
 
 docs/             Concepts, safety notes and usage guidance
 examples/         Sanitized example output
-.github/          CI checks for shell scripts and Markdown
+.github/          CI checks, issue templates and contribution workflow
 ```
 
 ## Quick start
@@ -69,11 +72,19 @@ bash scripts/monitoring/check_reboot_required.sh
 bash scripts/monitoring/check_certificate_expiry.sh example.com 443 30
 ```
 
+## Roadmap
+
+The project roadmap is tracked in [ROADMAP.md](ROADMAP.md). The first milestone is a trustworthy Linux host documentation and read-only security audit baseline. Configuration-changing automation will only be added after the audit scripts, examples and safety documentation are solid.
+
 ## Safety
 
 Most scripts are read-only and intended for documentation, review and learning. Use them only on systems you own or are explicitly allowed to administer. Review every script before running it with elevated privileges.
 
 See [docs/script-safety.md](docs/script-safety.md).
+
+## Contributing
+
+Contributions should keep the repository conservative, readable and safe by default. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Status
 

@@ -1,0 +1,38 @@
+name: Bug report
+description: Report a problem in an existing script or document
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: input
+    id: script
+    attributes:
+      label: Affected file
+      placeholder: "scripts/security/sasd-open-ports-audit.sh"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Distribution, version, shell, relevant tool versions. Do not include private hostnames or IP addresses.
+      placeholder: "Debian 12, Bash 5.2, systemd 252"
+  - type: textarea
+    id: sanitized_output
+    attributes:
+      label: Sanitized output
+      description: Paste only sanitized output. Remove secrets, private addresses and personal data.
+      render: text
