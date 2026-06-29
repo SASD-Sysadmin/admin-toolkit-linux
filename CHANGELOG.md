@@ -8,6 +8,11 @@ The project currently uses a simple, human-readable changelog because it is an e
 
 ### Added
 
+- Added cron and systemd timer reporting scripts.
+- Added firewall and auditd status reporting scripts.
+- Added conservative MariaDB/MySQL inventory script.
+- Added documentation for scheduling, security controls and database inventory.
+- Extended the read-only collector with the new reports.
 - Added a detailed README script index.
 - Added `docs/script-index.md` as a dedicated overview of all current scripts.
 - Added `docs/testing.md` with local validation and smoke-test guidance.

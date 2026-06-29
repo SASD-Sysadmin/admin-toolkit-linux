@@ -22,7 +22,6 @@ Current focus:
 Later focus:
 
 - deeper service-specific checks
-- firewall and auditd reporting
 - backup restore test documentation
 - Ansible-based baseline configuration
 - DNS, database and SNMP reporting helpers
@@ -72,7 +71,8 @@ Generated reports are intentionally written below `reports/`, which is ignored b
 scripts/
   accounts/       Local account baselines and baseline comparisons
   backup/         Backup age checks and rsync snapshot helper
-  config/         Configuration reports for sshd, sudoers, journald, logrotate
+  config/         Configuration reports for sshd, sudoers, journald, logrotate, cron and timers
+  database/       Conservative local database inventory helpers
   filesystem/     Filesystem and open-deleted-file reports
   host-doc/       Host, service and package inventory
   logging/        Journal and authentication log review helpers
@@ -99,8 +99,11 @@ A detailed script index is available in [docs/script-index.md](docs/script-index
 | Backup | `scripts/backup/sasd-rsync-snapshot.sh` | Conservative rsync snapshot helper, dry-run by default. |
 | Config | `scripts/config/sasd-journald-config-report.sh` | Review journald configuration and journal directory state. |
 | Config | `scripts/config/sasd-logrotate-report.sh` | Review logrotate policy and drop-in configuration. |
+| Config | `scripts/config/sasd-cron-report.sh` | Report cron configuration and scheduled jobs. |
+| Config | `scripts/config/sasd-systemd-timers-report.sh` | Report systemd timer state and timer unit files. |
 | Config | `scripts/config/sasd-sshd-config-report.sh` | Report OpenSSH server configuration when available. |
 | Config | `scripts/config/sasd-sudoers-report.sh` | Validate and review sudoers configuration. |
+| Database | `scripts/database/sasd-mariadb-inventory.sh` | Report local MariaDB/MySQL installation facts without login. |
 | Filesystem | `scripts/filesystem/sasd-deleted-open-files.sh` | Find deleted files that are still held open by processes. |
 | Filesystem | `scripts/filesystem/sasd-disk-usage-report.sh` | Report disk usage and largest filesystem areas. |
 | Host documentation | `scripts/host-doc/sasd-host-inventory.sh` | Generate a basic host inventory report. |
@@ -119,6 +122,8 @@ A detailed script index is available in [docs/script-index.md](docs/script-index
 | Reporting | `scripts/reporting/sasd-admin-summary.sh` | Generate a Markdown admin summary from selected checks. |
 | Reporting | `scripts/reporting/sasd-run-readonly-checks.sh` | Run a read-only check collection and create an index. |
 | Reporting | `scripts/reporting/sasd-security-summary.sh` | Generate a Markdown security summary from selected checks. |
+| Security | `scripts/security/sasd-auditd-status-report.sh` | Report auditd/auditctl state and audit rule visibility. |
+| Security | `scripts/security/sasd-firewall-status-report.sh` | Report firewall tooling and rule summary. |
 | Security | `scripts/security/sasd-fim-baseline.sh` | Create a file integrity baseline. |
 | Security | `scripts/security/sasd-fim-check.sh` | Compare current files against a FIM baseline. |
 | Security | `scripts/security/sasd-open-ports-audit.sh` | Report listening ports and related process data. |
@@ -158,6 +163,9 @@ Before sharing generated reports, review them for hostnames, usernames, paths, p
 - [docs/testing.md](docs/testing.md)
 - [docs/run-readonly-checks.md](docs/run-readonly-checks.md)
 - [docs/world-writable-audit.md](docs/world-writable-audit.md)
+- [docs/scheduling-reporting.md](docs/scheduling-reporting.md)
+- [docs/security-controls-reporting.md](docs/security-controls-reporting.md)
+- [docs/database-inventory.md](docs/database-inventory.md)
 - [docs/repository-strategy.md](docs/repository-strategy.md)
 - [docs/script-safety.md](docs/script-safety.md)
 

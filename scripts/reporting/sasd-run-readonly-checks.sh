@@ -202,6 +202,8 @@ run_script "scripts/config/sasd-sshd-config-report.sh" "20-sshd-config.md"
 run_script "scripts/config/sasd-sudoers-report.sh" "21-sudoers.md"
 run_script "scripts/config/sasd-journald-config-report.sh" "22-journald-config.md"
 run_script "scripts/config/sasd-logrotate-report.sh" "23-logrotate.md"
+run_script "scripts/config/sasd-cron-report.sh" "24-cron.md"
+run_script "scripts/config/sasd-systemd-timers-report.sh" "25-systemd-timers.md"
 
 # Security and account review.
 run_script "scripts/security/sasd-open-ports-audit.sh" "30-open-ports.md"
@@ -212,12 +214,15 @@ run_script "scripts/accounts/sasd-account-baseline.sh" "34-account-baseline.tsv"
 run_script "scripts/security/sasd-suid-sgid-audit.sh" "35-suid-sgid.md"
 run_script "scripts/security/sasd-world-writable-audit.sh" "36-world-writable.md" --max-results "$WORLD_WRITABLE_MAX"
 run_script "scripts/security/sasd-sensitive-files-check.sh" "37-sensitive-files.md"
+run_script "scripts/security/sasd-firewall-status-report.sh" "38-firewall.md"
+run_script "scripts/security/sasd-auditd-status-report.sh" "39-auditd.md"
 
 # Logging and package/reboot state.
 run_script "scripts/logging/sasd-journal-errors.sh" "40-journal-errors.md"
 run_script "scripts/logging/sasd-auth-log-report.sh" "41-auth-log.md"
 run_script "scripts/packages/sasd-update-status-report.sh" "50-update-status.md"
 run_script "scripts/packages/sasd-reboot-required-report.sh" "51-reboot-required.md"
+run_script "scripts/database/sasd-mariadb-inventory.sh" "52-mariadb-inventory.md"
 
 if [[ "$INCLUDE_SUMMARY" == "yes" ]]; then
     # Summary reports call other scripts and can be longer. They are useful as a

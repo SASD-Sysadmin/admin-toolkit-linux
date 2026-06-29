@@ -49,6 +49,8 @@ Example:
 | --- | --- | --- |
 | `scripts/config/sasd-journald-config-report.sh` | Reviews journald configuration and journal directory state. | Text |
 | `scripts/config/sasd-logrotate-report.sh` | Reviews logrotate policy and drop-in files. | Text |
+| `scripts/config/sasd-cron-report.sh` | Reports cron configuration, drop-ins and user crontab metadata. | Text |
+| `scripts/config/sasd-systemd-timers-report.sh` | Reports systemd timer state and timer unit files. | Text |
 | `scripts/config/sasd-sshd-config-report.sh` | Reports OpenSSH server settings when readable. | Text |
 | `scripts/config/sasd-sudoers-report.sh` | Validates and reviews sudoers configuration. | Text |
 
@@ -56,6 +58,18 @@ Example:
 
 ```bash
 ./scripts/config/sasd-sudoers-report.sh
+```
+
+## Database
+
+| Script | Purpose | Typical output |
+| --- | --- | --- |
+| `scripts/database/sasd-mariadb-inventory.sh` | Reports local MariaDB/MySQL installation facts without login. | Text |
+
+Example:
+
+```bash
+./scripts/database/sasd-mariadb-inventory.sh
 ```
 
 ## Filesystem
@@ -121,6 +135,8 @@ Recommended usage:
 
 | Script | Purpose | Typical output |
 | --- | --- | --- |
+| `scripts/security/sasd-auditd-status-report.sh` | Reports auditd/auditctl state and audit rule visibility. | Text |
+| `scripts/security/sasd-firewall-status-report.sh` | Reports firewall tooling and rule summary. | Text |
 | `scripts/security/sasd-fim-baseline.sh` | Creates a file integrity baseline. | TSV |
 | `scripts/security/sasd-fim-check.sh` | Compares files with a FIM baseline. | Text |
 | `scripts/security/sasd-open-ports-audit.sh` | Reports open/listening ports. | Markdown/Text |
