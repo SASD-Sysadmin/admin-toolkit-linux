@@ -7,7 +7,7 @@
 SHELL := /bin/bash
 
 SCRIPT_FILES := $(shell find scripts -type f -name '*.sh' 2>/dev/null | sort)
-REPORT_DIR ?= reports/local-smoke-$$(date +%Y%m%d-%H%M%S)
+REPORT_DIR ?= reports/local-smoke-$(shell date +%Y%m%d-%H%M%S)
 
 .PHONY: help
 help:
