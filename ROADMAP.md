@@ -21,10 +21,10 @@ roadmap milestones.
 Roadmap milestones describe product maturity and topic areas. Implementation
 phases describe the order in which files happened to be created.
 
-Current direction: finish a coherent `v0.1.0` read-only toolkit before starting
+Current direction: keep a coherent read-only toolkit before starting
 configuration-changing automation or Ansible roles.
 
-## Current release target: v0.1.0
+## Current release target: v0.1.x read-only toolkit
 
 Goal: a trustworthy read-only Linux admin toolkit that a visitor can understand,
 run locally and review without needing GitHub Actions or external services.
@@ -39,16 +39,39 @@ Release criteria:
 - [x] Permission reporting handles Linux symlink metadata carefully.
 - [x] A findings summary exists for quick triage.
 - [x] A release-readiness script exists.
-- [ ] README, script index and CHANGELOG are reviewed on GitHub.
-- [ ] Final `make check && make smoke` passes on a clean working tree.
-- [ ] Final human review confirms that no real secrets or customer data exist.
-- [ ] Tag `v0.1.0` is created only after review.
+- [x] README, script index and CHANGELOG are reviewed and maintained.
+- [x] Final `make check && make smoke` passes on a clean working tree.
+- [x] Release readiness reports blocking failures as zero.
+- [ ] Confirm whether the local `v0.1.0` tag is already on the intended commit
+  and pushed to the remote.
+- [ ] Final human review confirms that no real secrets or customer data exist in
+  examples or generated sample reports.
+
+## Cross-cutting follow-up: privilege awareness
+
+Goal: make report completeness visible without forcing every script to run as
+root.
+
+Status: documented as a planned quality improvement.
+
+Planned approach:
+
+- [x] Document privilege expectations in `docs/privilege-expectations.md`.
+- [ ] Add a common wording pattern to scripts that scan protected directories.
+- [ ] Add report headers such as `Privilege: root` or `Privilege: non-root`.
+- [ ] Add report completeness hints such as `complete`, `partial` or
+  `best-effort` where useful.
+- [ ] Keep scripts usable as normal users whenever partial output is still
+  valuable.
+
+Important rule: do not hide permission-denied signals completely. They explain
+why a report may be incomplete. Prefer clear context over silent suppression.
 
 ## Milestone 0: Repository foundation
 
 Goal: make the repository look maintained, safe and navigable.
 
-Status: mostly complete for `v0.1.0`.
+Status: complete for the current read-only baseline.
 
 Completed:
 
@@ -61,10 +84,9 @@ Completed:
 - [x] Normalize line endings with `.gitattributes`.
 - [x] Add local smoke-test and release-readiness checks.
 
-Still useful before/after `v0.1.0`:
+Still useful later:
 
-- [ ] Review README and script index for clarity after the current script count.
-- [ ] Decide whether to keep GitHub Actions only as examples or enable them later.
+- [ ] Decide whether to keep GitHub Actions only as examples or enable them.
 
 Exit criteria:
 
@@ -104,7 +126,8 @@ Exit criteria:
 
 Goal: make typical Linux risks visible without automatically fixing them.
 
-Status: complete for `v0.1.0` and already extended beyond the original baseline.
+Status: complete for the current baseline and already extended beyond the
+original baseline.
 
 Implemented:
 
@@ -138,26 +161,34 @@ Exit criteria:
 
 Goal: provide small, useful log review helpers for daily operations.
 
-Status: partially complete.
+Status: complete for the current read-only baseline.
 
 Implemented:
 
 - [x] `scripts/logging/sasd-journal-errors.sh`
 - [x] `scripts/logging/sasd-auth-log-report.sh`
+- [x] `scripts/logging/sasd-sudo-usage-report.sh`
+- [x] `scripts/logging/sasd-kernel-warnings.sh`
+- [x] `scripts/logging/sasd-log-volume-report.sh`
 - [x] `scripts/config/sasd-journald-config-report.sh`
 - [x] `scripts/config/sasd-logrotate-report.sh`
+- [x] `scripts/reporting/sasd-run-logging-review.sh`
+- [x] `docs/logging-milestone-3.md`
+- [x] `examples/sample-logging-review-index.md`
 
-Still planned:
+Still useful later:
 
-- [ ] `scripts/logging/sasd-sudo-usage-report.sh`
-- [ ] `scripts/logging/sasd-kernel-warnings.sh`
-- [ ] `scripts/logging/sasd-log-volume-report.sh`
+- [ ] Add privilege/completeness headers to logging reports.
+- [ ] Add optional filtering for noisy known WSL or desktop kernel messages.
+- [ ] Add optional TSV/JSON output for selected log summaries.
+- [ ] Add sanitized sample outputs for sudo, kernel and log-volume reports.
 
 Exit criteria:
 
 - Scripts support systemd-journald first.
 - Scripts degrade gracefully on systems without expected log files.
 - Reports are useful for a daily admin review.
+- Permission-denied cases are visible and explained rather than hidden.
 
 ## Milestone 4: Monitoring plugin examples
 
@@ -223,14 +254,15 @@ Implemented:
 
 - [x] `scripts/backup/sasd-rsync-snapshot.sh`
 - [x] `scripts/backup/sasd-backup-age-check.sh`
+- [x] `docs/backup-validation.md`
 - [x] `docs/backup-age-check.md`
 
 Still planned:
 
 - [ ] `scripts/backup/sasd-restore-test.sh`
 - [ ] `scripts/backup/sasd-git-bundle-backup.sh`
-- [ ] Document a safe restore-test workflow that never deletes backup data by
-  default.
+- [ ] Backup manifest or restore-test template.
+- [ ] Sanitized restore-test example report.
 
 Exit criteria:
 
@@ -243,7 +275,7 @@ Exit criteria:
 
 Goal: add configuration management only after the read-only toolbox is useful.
 
-Status: not started intentionally.
+Status: not started by design.
 
 Planned structure:
 
@@ -259,26 +291,11 @@ ansible/
     firewall/
 ```
 
-Do not start this before `v0.1.0` unless there is a clear reason. When Ansible
-arrives, it must be clearly separated from read-only audit scripts.
-
 Exit criteria:
 
 - Ansible playbooks are clearly separated from audit scripts.
 - Roles are conservative and documented.
 - Potentially disruptive changes are opt-in and easy to review.
-
-## Additional implemented areas outside the original roadmap
-
-These were added because the live test system exposed useful audit questions.
-They support the read-only baseline and do not change the system.
-
-- [x] Database inventory: MariaDB/MySQL and PostgreSQL.
-- [x] Browser/vendor repository review.
-- [x] Cron and systemd timer reporting.
-- [x] Firewall and auditd visibility.
-- [x] Symlink-aware permission interpretation.
-- [x] Release-readiness reporting.
 
 ## Repository family direction
 

@@ -1,8 +1,11 @@
 # Script Index
 
-This document lists the current scripts in `admin-toolkit-linux` and explains their intended use.
+This document lists the current scripts in `admin-toolkit-linux` and explains
+their intended use.
 
-The project favors small, readable scripts. Most scripts are read-only and produce text, Markdown or TSV output that can be reviewed manually or collected by `scripts/reporting/sasd-run-readonly-checks.sh`.
+The project favors small, readable scripts. Most scripts are read-only and
+produce text, Markdown or TSV output that can be reviewed manually or collected
+by `scripts/reporting/sasd-run-readonly-checks.sh`.
 
 ## Exit status convention
 
@@ -15,6 +18,12 @@ The current scripts use this general convention:
 | `2+` | Execution problem, missing prerequisite, invalid arguments or unexpected error. |
 
 Always read the script output. An exit status alone is not a security assessment.
+
+## Privilege expectations
+
+Many scripts are useful as a normal user. Some reports are more complete when
+run as root because protected directories or log files may otherwise be skipped.
+See [docs/privilege-expectations.md](privilege-expectations.md).
 
 ## Accounts
 
@@ -47,12 +56,13 @@ Example:
 
 | Script | Purpose | Typical output |
 | --- | --- | --- |
+| `scripts/config/sasd-browser-repo-report.sh` | Reports browser/vendor package repositories and keyring hints. | Text |
+| `scripts/config/sasd-cron-report.sh` | Reports cron configuration, drop-ins and user crontab metadata. | Text |
 | `scripts/config/sasd-journald-config-report.sh` | Reviews journald configuration and journal directory state. | Text |
 | `scripts/config/sasd-logrotate-report.sh` | Reviews logrotate policy and drop-in files. | Text |
-| `scripts/config/sasd-cron-report.sh` | Reports cron configuration, drop-ins and user crontab metadata. | Text |
-| `scripts/config/sasd-systemd-timers-report.sh` | Reports systemd timer state and timer unit files. | Text |
 | `scripts/config/sasd-sshd-config-report.sh` | Reports OpenSSH server settings when readable. | Text |
 | `scripts/config/sasd-sudoers-report.sh` | Validates and reviews sudoers configuration. | Text |
+| `scripts/config/sasd-systemd-timers-report.sh` | Reports systemd timer state and timer unit files. | Text |
 
 Example:
 
@@ -65,11 +75,13 @@ Example:
 | Script | Purpose | Typical output |
 | --- | --- | --- |
 | `scripts/database/sasd-mariadb-inventory.sh` | Reports local MariaDB/MySQL installation facts without login. | Text |
+| `scripts/database/sasd-postgresql-inventory.sh` | Reports local PostgreSQL installation facts without database login. | Text |
 
 Example:
 
 ```bash
 ./scripts/database/sasd-mariadb-inventory.sh
+./scripts/database/sasd-postgresql-inventory.sh
 ```
 
 ## Filesystem
@@ -93,6 +105,17 @@ Example:
 | --- | --- | --- |
 | `scripts/logging/sasd-auth-log-report.sh` | Summarizes authentication log signals. | Text |
 | `scripts/logging/sasd-journal-errors.sh` | Reviews recent journal warnings and errors. | Markdown/Text |
+| `scripts/logging/sasd-kernel-warnings.sh` | Reviews kernel warnings from journald and dmesg fallback output. | Markdown |
+| `scripts/logging/sasd-log-volume-report.sh` | Reports visible log volume and journald disk usage. | Markdown |
+| `scripts/logging/sasd-sudo-usage-report.sh` | Summarizes sudo usage from journald and auth logs. | Markdown |
+
+Example:
+
+```bash
+./scripts/logging/sasd-sudo-usage-report.sh --since today --max-lines 80
+./scripts/logging/sasd-kernel-warnings.sh --since today --max-lines 80
+./scripts/logging/sasd-log-volume-report.sh --max-lines 40
+```
 
 ## Monitoring
 
@@ -122,13 +145,17 @@ Example:
 | Script | Purpose | Typical output |
 | --- | --- | --- |
 | `scripts/reporting/sasd-admin-summary.sh` | Generates a Markdown admin summary from selected checks. | Markdown |
-| `scripts/reporting/sasd-run-readonly-checks.sh` | Runs a read-only check collection and creates an index. | Directory with reports |
+| `scripts/reporting/sasd-findings-summary.sh` | Generates a compact triage findings summary. | Markdown |
+| `scripts/reporting/sasd-release-readiness.sh` | Checks local repository readiness before tagging. | Markdown |
+| `scripts/reporting/sasd-run-logging-review.sh` | Runs a focused logging review collection. | Directory with reports |
+| `scripts/reporting/sasd-run-readonly-checks.sh` | Runs a broad read-only check collection and creates an index. | Directory with reports |
 | `scripts/reporting/sasd-security-summary.sh` | Generates a Markdown security summary from selected checks. | Markdown |
 
 Recommended usage:
 
 ```bash
 ./scripts/reporting/sasd-run-readonly-checks.sh --output ./reports/local-test
+./scripts/reporting/sasd-run-logging-review.sh --since today --output ./reports/logging-review
 ```
 
 ## Security
@@ -140,9 +167,12 @@ Recommended usage:
 | `scripts/security/sasd-fim-baseline.sh` | Creates a file integrity baseline. | TSV |
 | `scripts/security/sasd-fim-check.sh` | Compares files with a FIM baseline. | Text |
 | `scripts/security/sasd-open-ports-audit.sh` | Reports open/listening ports. | Markdown/Text |
+| `scripts/security/sasd-permission-risk-report.sh` | Reports sensitive permission risks with symlink-aware handling. | Markdown |
+| `scripts/security/sasd-root-owned-writable-report.sh` | Reports root-owned files/directories with group or other write bits. | Markdown |
 | `scripts/security/sasd-sensitive-files-check.sh` | Checks sensitive system file permissions. | Text |
 | `scripts/security/sasd-ssh-baseline-check.sh` | Compares SSH server config with a small baseline. | Markdown |
 | `scripts/security/sasd-suid-sgid-audit.sh` | Lists SUID/SGID files. | Markdown/Text |
+| `scripts/security/sasd-symlink-target-report.sh` | Reports symlink metadata and target metadata separately. | Markdown |
 | `scripts/security/sasd-system-accounts-audit.sh` | Reports suspicious system-account properties. | Markdown |
 | `scripts/security/sasd-world-writable-audit.sh` | Reports world-writable filesystem entries with filtering. | Markdown/Text/TSV |
 
