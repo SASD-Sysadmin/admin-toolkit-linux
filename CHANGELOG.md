@@ -9,6 +9,8 @@ early-stage administration toolkit.
 
 ### Added
 
+- Added focused monitoring review for Roadmap Milestone 4.
+- Added inode monitoring check and monitoring review collector.
 - Added focused host inventory review for Roadmap Milestone 1.
 - Added network inventory, storage inventory and host inventory collector scripts.
 - Added host documentation baseline and milestone status documentation.
@@ -36,6 +38,8 @@ early-stage administration toolkit.
 
 ### Changed
 
+- Marked Roadmap Milestone 4 monitoring checks as implemented for the current
+  read-only baseline.
 - Marked Roadmap Milestone 1 host documentation as implemented for the current
   read-only baseline.
 - Marked Roadmap Milestone 6 backup and restore validation as implemented for
@@ -61,6 +65,8 @@ early-stage administration toolkit.
 
 ### Added
 
+- Added focused monitoring review for Roadmap Milestone 4.
+- Added inode monitoring check and monitoring review collector.
 - Initial host documentation scripts.
 - Initial read-only security audit scripts.
 - Logging and monitoring helper scripts.
@@ -74,6 +80,8 @@ early-stage administration toolkit.
 
 ### Changed
 
+- Marked Roadmap Milestone 4 monitoring checks as implemented for the current
+  read-only baseline.
 - Moved GitHub Actions workflows to documentation examples so the repository can
   be maintained locally first.
 - Improved SSH configuration handling for WSL, containers and systems without

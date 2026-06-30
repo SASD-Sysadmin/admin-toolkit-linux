@@ -138,8 +138,18 @@ Example:
 | --- | --- | --- |
 | `scripts/monitoring/check_certificate_expiry.sh` | Checks certificate expiry in monitoring-plugin style. | Text |
 | `scripts/monitoring/check_disk_usage.sh` | Checks disk usage thresholds. | Text |
+| `scripts/monitoring/check_inodes.sh` | Checks inode usage thresholds. | Text |
 | `scripts/monitoring/check_reboot_required.sh` | Checks common reboot-required indicators. | Text |
 | `scripts/monitoring/check_service_active.sh` | Checks whether a service is active. | Text |
+| `scripts/reporting/sasd-run-monitoring-review.sh` | Runs the focused monitoring review collection. | Directory with reports |
+
+Example:
+
+```bash
+./scripts/monitoring/check_disk_usage.sh --path / --warning 80 --critical 90
+./scripts/monitoring/check_inodes.sh --path / --warning 80 --critical 90
+./scripts/reporting/sasd-run-monitoring-review.sh --path / --service cron.service --output ./reports/monitoring-local
+```
 
 ## Network
 
@@ -163,6 +173,7 @@ Example:
 | `scripts/reporting/sasd-findings-summary.sh` | Generates a compact triage findings summary. | Markdown |
 | `scripts/reporting/sasd-release-readiness.sh` | Checks local repository readiness before tagging. | Markdown |
 | `scripts/reporting/sasd-run-logging-review.sh` | Runs a focused logging review collection. | Directory with reports |
+| `scripts/reporting/sasd-run-monitoring-review.sh` | Runs a focused monitoring review collection. | Directory with reports |
 | `scripts/reporting/sasd-run-readonly-checks.sh` | Runs a broad read-only check collection and creates an index. | Directory with reports |
 | `scripts/reporting/sasd-security-summary.sh` | Generates a Markdown security summary from selected checks. | Markdown |
 
@@ -171,6 +182,7 @@ Recommended usage:
 ```bash
 ./scripts/reporting/sasd-run-readonly-checks.sh --output ./reports/local-test
 ./scripts/reporting/sasd-run-logging-review.sh --since today --output ./reports/logging-review
+./scripts/reporting/sasd-run-monitoring-review.sh --path / --output ./reports/monitoring-review
 ```
 
 ## Security

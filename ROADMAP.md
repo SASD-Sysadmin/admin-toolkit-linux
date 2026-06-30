@@ -39,7 +39,7 @@ Release criteria:
 - [x] Permission reporting handles Linux symlink metadata carefully.
 - [x] A findings summary exists for quick triage.
 - [x] A release-readiness script exists.
-- [x] Focused host inventory, logging and backup review collectors exist.
+- [x] Focused host inventory, monitoring, logging and backup review collectors exist.
 - [x] README, script index and CHANGELOG are reviewed and maintained.
 - [x] Final `make check && make smoke` passes on a clean working tree.
 - [x] Release readiness reports blocking failures as zero.
@@ -203,7 +203,7 @@ Exit criteria:
 
 Goal: provide simple monitoring checks with predictable output and exit codes.
 
-Status: mostly complete for the initial baseline.
+Status: complete for the current read-only baseline.
 
 Implemented:
 
@@ -211,14 +211,21 @@ Implemented:
 - [x] `scripts/monitoring/check_reboot_required.sh`
 - [x] `scripts/monitoring/check_certificate_expiry.sh`
 - [x] `scripts/monitoring/check_disk_usage.sh`
+- [x] `scripts/monitoring/check_inodes.sh`
+- [x] `scripts/reporting/sasd-run-monitoring-review.sh`
+- [x] `docs/monitoring-checks.md`
+- [x] `docs/milestone-4-monitoring-status.md`
+- [x] `examples/sample-monitoring-review-index.md`
 - [x] `scripts/packages/sasd-update-status-report.sh`
 - [x] `scripts/packages/sasd-reboot-required-report.sh`
 
-Still planned:
+Still useful later:
 
-- [ ] `scripts/monitoring/check_inodes.sh`
-- [ ] Decide whether package update checks belong in `monitoring/` or remain in
-  `packages/` as operational reports.
+- [ ] Add role profiles for expected services per host type.
+- [ ] Add optional JSON output for selected monitoring checks.
+- [ ] Add a sanitized full monitoring review sample from a lab VM.
+- [ ] Decide whether package update checks remain operational reports or become
+  monitoring plugins too.
 
 Exit criteria:
 
@@ -226,6 +233,8 @@ Exit criteria:
 - Each check has `--help` or clear usage output.
 - Checks can be used by a human or integrated into Icinga/Nagios-compatible
   systems later.
+- The focused collector records WARNING and CRITICAL results without treating
+  them as collector execution failures.
 
 ## Milestone 5: File integrity monitoring baseline
 

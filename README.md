@@ -20,7 +20,7 @@ Current focus:
 - read-only security audit helpers
 - Linux log and service review
 - backup and restore validation review
-- simple monitoring plugin examples
+- monitoring checks and review collection
 - account and configuration baselines
 - file integrity baseline checks
 - read-only report collection for repeatable local audits
@@ -76,6 +76,12 @@ Create a focused host inventory:
 ./scripts/reporting/sasd-run-host-inventory.sh --output ./reports/host-inventory
 ```
 
+Create a focused monitoring review:
+
+```bash
+./scripts/reporting/sasd-run-monitoring-review.sh --path / --service cron.service --output ./reports/monitoring-review
+```
+
 Create a focused backup and restore validation review:
 
 ```bash
@@ -96,7 +102,7 @@ scripts/
   filesystem/     Filesystem and open-deleted-file reports
   host-doc/       Host, service, package, network and storage inventory
   logging/        Journal, sudo, kernel and log-volume review helpers
-  monitoring/     Simple monitoring-plugin-style checks
+  monitoring/     Disk, inode, reboot, service and certificate checks
   network/        DNS and listening-service reports
   packages/       Package update and reboot-required reports
   reporting/      Summary, readiness and collection scripts
@@ -143,6 +149,7 @@ A detailed script index is available in [docs/script-index.md](docs/script-index
 | Logging | `scripts/logging/sasd-sudo-usage-report.sh` | Summarize sudo usage from journald and auth logs. |
 | Monitoring | `scripts/monitoring/check_certificate_expiry.sh` | Monitoring-style certificate expiry check. |
 | Monitoring | `scripts/monitoring/check_disk_usage.sh` | Monitoring-style disk usage check. |
+| Monitoring | `scripts/monitoring/check_inodes.sh` | Monitoring-style inode usage check. |
 | Monitoring | `scripts/monitoring/check_reboot_required.sh` | Monitoring-style reboot-required check. |
 | Monitoring | `scripts/monitoring/check_service_active.sh` | Monitoring-style service active check. |
 | Network | `scripts/network/sasd-forward-reverse-dns-check.sh` | Check forward/reverse DNS consistency for hostnames. |
@@ -153,6 +160,7 @@ A detailed script index is available in [docs/script-index.md](docs/script-index
 | Reporting | `scripts/reporting/sasd-findings-summary.sh` | Generate a compact triage findings summary. |
 | Reporting | `scripts/reporting/sasd-release-readiness.sh` | Check local repository readiness before tagging. |
 | Reporting | `scripts/reporting/sasd-run-logging-review.sh` | Run a focused logging review collection. |
+| Reporting | `scripts/reporting/sasd-run-monitoring-review.sh` | Run a focused monitoring review collection. |
 | Reporting | `scripts/reporting/sasd-run-readonly-checks.sh` | Run a read-only check collection and create an index. |
 | Reporting | `scripts/reporting/sasd-security-summary.sh` | Generate a Markdown security summary from selected checks. |
 | Security | `scripts/security/sasd-auditd-status-report.sh` | Report auditd/auditctl state and audit rule visibility. |
@@ -208,6 +216,8 @@ package names, service names, IP addresses and environment-specific details.
 - [docs/milestone-1-host-documentation-status.md](docs/milestone-1-host-documentation-status.md)
 - [docs/testing.md](docs/testing.md)
 - [docs/run-readonly-checks.md](docs/run-readonly-checks.md)
+- [docs/monitoring-checks.md](docs/monitoring-checks.md)
+- [docs/milestone-4-monitoring-status.md](docs/milestone-4-monitoring-status.md)
 - [docs/backup-restore-validation.md](docs/backup-restore-validation.md)
 - [docs/milestone-6-backup-restore-status.md](docs/milestone-6-backup-restore-status.md)
 - [docs/logging-milestone-3.md](docs/logging-milestone-3.md)
