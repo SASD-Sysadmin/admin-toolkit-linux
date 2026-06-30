@@ -65,6 +65,22 @@ has_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
+first_output_line_or() {
+  # Print the first non-empty output line of a command, or a fallback value.
+  # Some systemctl queries print a useful state such as "disabled" but still
+  # return a non-zero exit code. Using `cmd || echo fallback` would then create
+  # multi-line Markdown table cells. This helper keeps table output stable.
+  local fallback="$1"
+  shift
+  local output
+  output="$({ "$@" 2>/dev/null || true; } | awk 'NF { print; exit }')"
+  if [ -n "$output" ]; then
+    printf '%s' "$output"
+  else
+    printf '%s' "$fallback"
+  fi
+}
+
 print_code_block() {
   # $1 command label; stdin content
   local title="$1"
@@ -231,8 +247,8 @@ if has_cmd systemctl; then
   echo '| Unit | Enabled | Active |'
   echo '| --- | --- | --- |'
   for unit in NetworkManager.service systemd-networkd.service systemd-resolved.service networking.service wicked.service; do
-    enabled="$(systemctl is-enabled "$unit" 2>/dev/null || printf 'unknown')"
-    active="$(systemctl is-active "$unit" 2>/dev/null || printf 'inactive')"
+    enabled="$(first_output_line_or unknown systemctl is-enabled "$unit")"
+    active="$(first_output_line_or inactive systemctl is-active "$unit")"
     printf '| `%s` | `%s` | `%s` |\n' "$unit" "$enabled" "$active"
   done
 else
