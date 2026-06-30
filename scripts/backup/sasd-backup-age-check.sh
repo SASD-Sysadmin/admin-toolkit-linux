@@ -1,149 +1,326 @@
 #!/usr/bin/env bash
-# -----------------------------------------------------------------------------
-# File: scripts/backup/sasd-backup-age-check.sh
-# Purpose: Check whether a backup directory contains recent backup files.
-# Project: admin-toolkit-linux
-# License: MIT
-# -----------------------------------------------------------------------------
-# This script is read-only. It does not create, delete, rotate, compress or upload
-# backups. It only checks file timestamps and reports whether the newest matching
-# file is recent enough for a simple operational policy.
-# -----------------------------------------------------------------------------
+# scripts/backup/sasd-backup-age-check.sh
+#
+# Purpose:
+#   Read-only backup freshness check for a configured directory.
+#
+# Design goals:
+#   - never modifies backup files
+#   - safe in the generic collector even when no backup path is configured
+#   - useful for explicit checks against real backup/snapshot directories
+#
+# Exit codes:
+#   0 - check completed and policy is satisfied, or no path configured
+#   1 - check completed but policy is not satisfied
+#   2 - invalid arguments or configured path cannot be scanned
 
 set -u
 set -o pipefail
 
 SCRIPT_NAME="$(basename "$0")"
-BACKUP_PATH=""
-PATTERN="*"
-MAX_AGE_DAYS="1"
-MIN_COUNT="1"
+BACKUP_PATH="${SASD_BACKUP_CHECK_PATH:-}"
+PATTERN="${SASD_BACKUP_CHECK_PATTERN:-*}"
+MAX_AGE_DAYS="${SASD_BACKUP_CHECK_MAX_AGE_DAYS:-7}"
+MIN_COUNT="${SASD_BACKUP_CHECK_MIN_COUNT:-1}"
+MAX_SHOWN="${SASD_BACKUP_CHECK_MAX_SHOWN:-10}"
+FORMAT="text"
 
-show_help() {
-    cat <<HELP
-Usage: $SCRIPT_NAME --path DIR [OPTIONS]
-
-Check whether a backup directory contains recent files.
-
-Required:
-  --path DIR          Directory that contains backup files.
+usage() {
+  cat <<'USAGE'
+Usage:
+  sasd-backup-age-check.sh [options]
 
 Options:
-  --pattern GLOB      File name pattern to match. Default: *
-  --max-age-days N    Newest matching file must be no older than N days.
-                      Default: 1
-  --min-count N       Require at least N matching files. Default: 1
-  -h, --help          Show this help text.
+  --path PATH            Backup/snapshot directory to scan.
+  --pattern GLOB         File glob to match. Default: *
+  --max-age-days N       Newest matching file must be at most N days old. Default: 7
+  --min-count N          Minimum number of matching files expected. Default: 1
+  --max-shown N          Show at most N newest matching files. Default: 10
+  --format text|markdown Output format. Default: text
+  -h, --help             Show this help.
+
+Environment defaults:
+  SASD_BACKUP_CHECK_PATH
+  SASD_BACKUP_CHECK_PATTERN
+  SASD_BACKUP_CHECK_MAX_AGE_DAYS
+  SASD_BACKUP_CHECK_MIN_COUNT
+  SASD_BACKUP_CHECK_MAX_SHOWN
 
 Examples:
-  ./$SCRIPT_NAME --path /backup/mysql --pattern '*.sql.gz' --max-age-days 1
-  ./$SCRIPT_NAME --path /srv/backups --min-count 7 --max-age-days 2
+  ./scripts/backup/sasd-backup-age-check.sh --path /backup --pattern '*.tar.gz' --max-age-days 2
+  SASD_BACKUP_CHECK_PATH=/backup ./scripts/backup/sasd-backup-age-check.sh
 
-Exit codes:
-  0  Backup age/count policy looks OK.
-  1  Warning: no recent enough backup or too few matching files.
-  2  Usage error or unreadable path.
-HELP
+Notes:
+  Without --path or SASD_BACKUP_CHECK_PATH this script exits 0 with an INFO
+  report. This keeps the generic read-only collector usable on hosts where a
+  backup location has not been configured yet.
+USAGE
 }
 
-fail() {
-    printf 'ERROR: %s\n' "$*" >&2
+is_positive_int() {
+  case "${1:-}" in
+    ''|*[!0-9]*) return 1 ;;
+    *) [ "$1" -gt 0 ] ;;
+  esac
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --path)
+      [ "$#" -ge 2 ] || { echo "ERROR: --path requires a value" >&2; exit 2; }
+      BACKUP_PATH="$2"
+      shift 2
+      ;;
+    --pattern)
+      [ "$#" -ge 2 ] || { echo "ERROR: --pattern requires a value" >&2; exit 2; }
+      PATTERN="$2"
+      shift 2
+      ;;
+    --max-age-days)
+      [ "$#" -ge 2 ] || { echo "ERROR: --max-age-days requires a value" >&2; exit 2; }
+      MAX_AGE_DAYS="$2"
+      shift 2
+      ;;
+    --min-count)
+      [ "$#" -ge 2 ] || { echo "ERROR: --min-count requires a value" >&2; exit 2; }
+      MIN_COUNT="$2"
+      shift 2
+      ;;
+    --max-shown)
+      [ "$#" -ge 2 ] || { echo "ERROR: --max-shown requires a value" >&2; exit 2; }
+      MAX_SHOWN="$2"
+      shift 2
+      ;;
+    --format)
+      [ "$#" -ge 2 ] || { echo "ERROR: --format requires a value" >&2; exit 2; }
+      FORMAT="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "ERROR: unknown option: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+case "$FORMAT" in
+  text|markdown) ;;
+  *) echo "ERROR: unsupported format: $FORMAT" >&2; exit 2 ;;
+esac
+
+for value_name in MAX_AGE_DAYS MIN_COUNT MAX_SHOWN; do
+  value="$(eval "printf '%s' \"\${$value_name}\"")"
+  if ! is_positive_int "$value"; then
+    echo "ERROR: $value_name must be a positive integer" >&2
     exit 2
+  fi
+done
+
+HOSTNAME_VALUE="$(hostname 2>/dev/null || printf 'unknown')"
+GENERATED="$(date -Is 2>/dev/null || date)"
+
+print_header() {
+  if [ "$FORMAT" = "markdown" ]; then
+    cat <<HEADER
+# SASD Backup Age Check
+
+- Generated: $GENERATED
+- Host: $HOSTNAME_VALUE
+- Path: ${BACKUP_PATH:-not configured}
+- Pattern: $PATTERN
+- Max age: $MAX_AGE_DAYS day(s)
+- Min count: $MIN_COUNT
+
+> This script is read-only. It checks file timestamps only and does not validate restoreability.
+
+HEADER
+  else
+    cat <<HEADER
+SASD Backup Age Check
+Generated: $GENERATED
+Host:      $HOSTNAME_VALUE
+Path:      ${BACKUP_PATH:-not configured}
+Pattern:   $PATTERN
+Max age:   $MAX_AGE_DAYS day(s)
+Min count: $MIN_COUNT
+HEADER
+  fi
 }
 
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --path)
-            [[ $# -ge 2 ]] || fail "--path requires a directory argument"
-            BACKUP_PATH="$2"
-            shift 2
-            ;;
-        --pattern)
-            [[ $# -ge 2 ]] || fail "--pattern requires a glob argument"
-            PATTERN="$2"
-            shift 2
-            ;;
-        --max-age-days)
-            [[ $# -ge 2 ]] || fail "--max-age-days requires a numeric argument"
-            [[ "$2" =~ ^[0-9]+$ ]] || fail "--max-age-days must be numeric"
-            MAX_AGE_DAYS="$2"
-            shift 2
-            ;;
-        --min-count)
-            [[ $# -ge 2 ]] || fail "--min-count requires a numeric argument"
-            [[ "$2" =~ ^[0-9]+$ ]] || fail "--min-count must be numeric"
-            MIN_COUNT="$2"
-            shift 2
-            ;;
-        -h|--help)
-            show_help
-            exit 0
-            ;;
-        *)
-            fail "unknown option: $1"
-            ;;
-    esac
-done
+print_header
 
-[[ -n "$BACKUP_PATH" ]] || fail "--path is required"
-[[ -d "$BACKUP_PATH" ]] || fail "backup path is not a directory: $BACKUP_PATH"
-[[ -r "$BACKUP_PATH" ]] || fail "backup path is not readable: $BACKUP_PATH"
+if [ -z "$BACKUP_PATH" ]; then
+  if [ "$FORMAT" = "markdown" ]; then
+    cat <<'INFO'
+## Result
 
-printf 'SASD Backup Age Check\n'
-printf 'Generated: %s\n' "$(date -Is)"
-printf 'Host:      %s\n' "$(hostname -f 2>/dev/null || hostname 2>/dev/null || echo unknown-host)"
-printf 'Path:      %s\n' "$BACKUP_PATH"
-printf 'Pattern:   %s\n' "$PATTERN"
-printf 'Max age:   %s day(s)\n' "$MAX_AGE_DAYS"
-printf 'Min count: %s\n\n' "$MIN_COUNT"
+INFO: no backup path configured.
 
-# GNU find is expected in this Linux-focused repository. We use epoch timestamps
-# because they are easy to compare and can be formatted later.
-mapfile -t matches < <(find "$BACKUP_PATH" -type f -name "$PATTERN" -printf '%T@\t%s\t%p\n' 2>/dev/null | sort -nr)
-count="${#matches[@]}"
+Configure a path with `--path PATH` or `SASD_BACKUP_CHECK_PATH`. The generic
+collector intentionally treats this as informational so read-only host reports do
+not fail on systems without a known backup location.
+INFO
+  else
+    cat <<'INFO'
+== Result ==
+INFO: no backup path configured.
 
-printf 'Matching files: %s\n' "$count"
-if (( count == 0 )); then
-    printf 'WARN: no matching backup files found.\n'
-    exit 1
+Configure a path with --path PATH or SASD_BACKUP_CHECK_PATH. The generic
+collector intentionally treats this as informational so read-only host reports do
+not fail on systems without a known backup location.
+INFO
+  fi
+  exit 0
 fi
 
-newest_line="${matches[0]}"
-newest_epoch="$(cut -f1 <<< "$newest_line")"
-newest_size="$(cut -f2 <<< "$newest_line")"
-newest_path="$(cut -f3- <<< "$newest_line")"
-now_epoch="$(date +%s)"
-newest_epoch_int="${newest_epoch%.*}"
-age_seconds=$(( now_epoch - newest_epoch_int ))
-age_days=$(( age_seconds / 86400 ))
-threshold_seconds=$(( MAX_AGE_DAYS * 86400 ))
-
-printf 'Newest file:    %s\n' "$newest_path"
-printf 'Newest size:    %s bytes\n' "$newest_size"
-printf 'Newest mtime:   %s\n' "$(date -d "@$newest_epoch_int" -Is 2>/dev/null || echo "$newest_epoch")"
-printf 'Newest age:     %s second(s), approx. %s day(s)\n\n' "$age_seconds" "$age_days"
-
-printf '== Newest matching files ==\n'
-printf '%s\n' "${matches[@]:0:10}" | while IFS=$'\t' read -r epoch size path; do
-    epoch_int="${epoch%.*}"
-    printf '%s  %12s  %s\n' "$(date -d "@$epoch_int" '+%Y-%m-%d %H:%M:%S %z' 2>/dev/null || echo "$epoch")" "$size" "$path"
-done
-
-status=0
-if (( count < MIN_COUNT )); then
-    printf '\nWARN: matching file count %s is below required minimum %s.\n' "$count" "$MIN_COUNT"
-    status=1
+if [ ! -d "$BACKUP_PATH" ]; then
+  echo "ERROR: configured path is not a directory: $BACKUP_PATH" >&2
+  exit 2
 fi
 
-if (( age_seconds > threshold_seconds )); then
-    printf '\nWARN: newest backup is older than allowed threshold.\n'
-    status=1
+TMP_LIST="$(mktemp)"
+TMP_WARN="$(mktemp)"
+cleanup() {
+  rm -f "$TMP_LIST" "$TMP_WARN"
+}
+trap cleanup EXIT
+
+# Output columns: epoch<TAB>size<TAB>mtime<TAB>path
+find "$BACKUP_PATH" -type f -name "$PATTERN" -printf '%T@\t%s\t%TY-%Tm-%Td %TH:%TM:%TS %Tz\t%p\n' 2>"$TMP_WARN" \
+  | sort -nr > "$TMP_LIST"
+
+COUNT="$(wc -l < "$TMP_LIST" | tr -d ' ')"
+NOW_EPOCH="$(date +%s)"
+MAX_AGE_SECONDS="$((MAX_AGE_DAYS * 86400))"
+STATUS=0
+
+NEWEST_LINE="$(head -n 1 "$TMP_LIST")"
+NEWEST_EPOCH=""
+NEWEST_SIZE=""
+NEWEST_MTIME=""
+NEWEST_PATH=""
+
+if [ -n "$NEWEST_LINE" ]; then
+  TAB_CHAR="$(printf '\t')"
+  NEWEST_EPOCH="$(printf '%s\n' "$NEWEST_LINE" | cut -f1)"
+  NEWEST_SIZE="$(printf '%s\n' "$NEWEST_LINE" | cut -f2)"
+  NEWEST_MTIME="$(printf '%s\n' "$NEWEST_LINE" | cut -f3)"
+  NEWEST_PATH="$(printf '%s\n' "$NEWEST_LINE" | cut -f4-)"
 fi
 
-if (( status == 0 )); then
-    printf '\nOK: backup age/count policy looks satisfied.\n'
+if [ "$COUNT" -lt "$MIN_COUNT" ]; then
+  STATUS=1
+fi
+
+if [ -n "$NEWEST_EPOCH" ]; then
+  # Convert floating epoch to integer seconds.
+  NEWEST_EPOCH_INT="${NEWEST_EPOCH%.*}"
+  AGE_SECONDS="$((NOW_EPOCH - NEWEST_EPOCH_INT))"
+  if [ "$AGE_SECONDS" -gt "$MAX_AGE_SECONDS" ]; then
+    STATUS=1
+  fi
 else
-    printf '\nReview backup job, destination, retention policy and restore tests.\n'
+  AGE_SECONDS=""
+  STATUS=1
 fi
 
-exit "$status"
+if [ "$FORMAT" = "markdown" ]; then
+  cat <<SUMMARY
+## Summary
+
+| Metric | Value |
+| --- | ---: |
+| Matching files | $COUNT |
+| Minimum expected | $MIN_COUNT |
+| Newest age seconds | ${AGE_SECONDS:-n/a} |
+| Max age seconds | $MAX_AGE_SECONDS |
+
+SUMMARY
+  if [ -s "$TMP_WARN" ]; then
+    cat <<'WARN'
+## Scan warnings
+
+\`\`\`text
+WARN
+    sed 's/[[:cntrl:]]//g' "$TMP_WARN"
+    cat <<'WARN'
+\`\`\`
+
+WARN
+  fi
+  if [ -n "$NEWEST_PATH" ]; then
+    cat <<NEWEST
+## Newest matching file
+
+| Field | Value |
+| --- | --- |
+| Path | \`$NEWEST_PATH\` |
+| Size | $NEWEST_SIZE bytes |
+| Mtime | $NEWEST_MTIME |
+| Age | ${AGE_SECONDS:-n/a} second(s) |
+
+NEWEST
+  fi
+  cat <<FILES
+## Newest matching files
+
+| Mtime | Size | Path |
+| --- | ---: | --- |
+FILES
+  head -n "$MAX_SHOWN" "$TMP_LIST" | while IFS= read -r line; do
+    size="$(printf '%s\n' "$line" | cut -f2)"
+    mtime="$(printf '%s\n' "$line" | cut -f3)"
+    path="$(printf '%s\n' "$line" | cut -f4-)"
+    printf '| `%s` | %s | `%s` |\n' "$mtime" "$size" "$path"
+  done
+  echo
+  if [ "$STATUS" -eq 0 ]; then
+    echo "OK: backup age/count policy looks satisfied."
+  else
+    echo "WARN: backup age/count policy is not satisfied."
+  fi
+else
+  cat <<SUMMARY
+== Summary ==
+Matching files:   $COUNT
+Minimum expected: $MIN_COUNT
+Newest age:       ${AGE_SECONDS:-n/a} second(s)
+Max age:          $MAX_AGE_SECONDS second(s)
+SUMMARY
+  if [ -s "$TMP_WARN" ]; then
+    echo
+    echo "== Scan warnings =="
+    sed 's/[[:cntrl:]]//g' "$TMP_WARN"
+  fi
+  if [ -n "$NEWEST_PATH" ]; then
+    cat <<NEWEST
+
+== Newest matching file ==
+Path:  $NEWEST_PATH
+Size:  $NEWEST_SIZE bytes
+Mtime: $NEWEST_MTIME
+Age:   ${AGE_SECONDS:-n/a} second(s)
+NEWEST
+  fi
+  echo
+  echo "== Newest matching files =="
+  head -n "$MAX_SHOWN" "$TMP_LIST" | while IFS= read -r line; do
+    size="$(printf '%s\n' "$line" | cut -f2)"
+    mtime="$(printf '%s\n' "$line" | cut -f3)"
+    path="$(printf '%s\n' "$line" | cut -f4-)"
+    printf '%s  %12s  %s\n' "$mtime" "$size" "$path"
+  done
+  echo
+  if [ "$STATUS" -eq 0 ]; then
+    echo "OK: backup age/count policy looks satisfied."
+  else
+    echo "WARN: backup age/count policy is not satisfied."
+  fi
+fi
+
+exit "$STATUS"
