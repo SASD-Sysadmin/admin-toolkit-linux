@@ -1,21 +1,22 @@
 #!/usr/bin/env bash
-# -----------------------------------------------------------------------------
-# File: scripts/reporting/sasd-run-readonly-checks.sh
-# Project: admin-toolkit-linux
-# Purpose: Run a curated set of read-only checks and write report files.
-# License: MIT
-# -----------------------------------------------------------------------------
-# Safety model
-# ------------
-# This collector only calls scripts that are designed to be read-only. It writes
-# output files into a report directory. It does not modify system configuration.
-# -----------------------------------------------------------------------------
+#
+# scripts/reporting/sasd-run-readonly-checks.sh
+#
+# Purpose:
+#   Run the safe read-only checks in this repository and write a report
+#   directory with an INDEX.md and status.tsv.
+#
+# Safety:
+#   This wrapper only calls read-only scripts from the repository. It does not
+#   repair findings and does not modify system configuration.
 
 set -u
 set -o pipefail
 
-SCRIPT_NAME="$(basename "$0")"
-OUTPUT_DIR=""
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+DEFAULT_OUTPUT="$REPO_ROOT/reports/$(hostname -s 2>/dev/null || echo host)-$(date +%Y%m%d-%H%M%S)"
+OUTPUT_DIR="$DEFAULT_OUTPUT"
 INCLUDE_SUMMARY=0
 
 usage() {
@@ -24,9 +25,9 @@ Usage:
   sasd-run-readonly-checks.sh [options]
 
 Options:
-  --output DIR        Write reports to DIR.
-  --include-summary   Also run verbose admin/security summary reports.
-  -h, --help          Show this help.
+  --output DIR        Write reports to DIR. Default: reports/HOST-TIMESTAMP.
+  --include-summary   Also run the large admin/security summary reports.
+  -h, --help          Show help.
 
 Examples:
   ./scripts/reporting/sasd-run-readonly-checks.sh
@@ -35,155 +36,150 @@ Examples:
 USAGE
 }
 
-log_error() { printf 'ERROR: %s\n' "$*" >&2; }
+fail() { echo "ERROR: $*" >&2; exit 2; }
 
-while [ "$#" -gt 0 ]; do
-  case "$1" in
-    --output)
-      [ "$#" -ge 2 ] || { log_error "--output requires a value"; exit 2; }
-      OUTPUT_DIR="$2"
-      shift 2
-      ;;
-    --include-summary)
-      INCLUDE_SUMMARY=1
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      log_error "unknown argument: $1"
-      usage >&2
-      exit 2
-      ;;
-  esac
-done
-
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-HOSTNAME_VALUE="$(hostname -s 2>/dev/null || hostname 2>/dev/null || printf 'unknown')"
-STAMP="$(date +%Y%m%d-%H%M%S)"
-if [ -z "$OUTPUT_DIR" ]; then
-  OUTPUT_DIR="$REPO_ROOT/reports/${HOSTNAME_VALUE}-${STAMP}"
-fi
-
-mkdir -p "$OUTPUT_DIR" || { log_error "cannot create output directory: $OUTPUT_DIR"; exit 2; }
-STATUS_FILE="$OUTPUT_DIR/status.tsv"
-INDEX_FILE="$OUTPUT_DIR/INDEX.md"
-: > "$STATUS_FILE"
-printf 'status\tscript\toutput\n' > "$STATUS_FILE"
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --output)
+        [[ $# -ge 2 ]] || fail "--output requires an argument"
+        OUTPUT_DIR="$2"
+        shift 2
+        ;;
+      --include-summary)
+        INCLUDE_SUMMARY=1
+        shift
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      *) fail "unknown argument: $1" ;;
+    esac
+  done
+}
 
 run_report() {
-  local output_file="$1"
-  local script="$2"
-  shift 2
-  local rel_script="${script#$REPO_ROOT/}"
+  local rel_script="$1" output_name="$2" status_file="$3"
+  local script_path="$REPO_ROOT/$rel_script"
+  local output_path="$OUTPUT_DIR/$output_name"
   local status
 
-  if [ ! -x "$script" ]; then
-    printf '127\t%s\t%s\n' "$rel_script" "$output_file" >> "$STATUS_FILE"
+  if [[ ! -x "$script_path" ]]; then
+    printf '127\t%s\t%s\n' "$rel_script" "$output_name" >>"$status_file"
     {
-      printf 'ERROR: script not executable or missing: %s\n' "$rel_script"
-    } > "$OUTPUT_DIR/$output_file"
-    return
+      echo "# Missing script"
+      echo
+      echo "Script not executable or not found: $rel_script"
+    } >"$output_path"
+    return 0
   fi
 
   set +e
-  "$script" "$@" > "$OUTPUT_DIR/$output_file" 2>&1
+  "$script_path" >"$output_path" 2>&1
   status=$?
-  set -e 2>/dev/null || true
-  printf '%s\t%s\t%s\n' "$status" "$rel_script" "$output_file" >> "$STATUS_FILE"
+  set -e
+  printf '%s\t%s\t%s\n' "$status" "$rel_script" "$output_name" >>"$status_file"
 }
 
-# Host documentation
-run_report "01-host-inventory.md"             "$REPO_ROOT/scripts/host-doc/sasd-host-inventory.sh"
-run_report "02-service-inventory.md"          "$REPO_ROOT/scripts/host-doc/sasd-service-inventory.sh"
-run_report "03-package-inventory.md"          "$REPO_ROOT/scripts/host-doc/sasd-package-inventory.sh"
+write_index() {
+  local status_file="$1" index_file="$OUTPUT_DIR/INDEX.md"
+  local generated host rel status script output
 
-# Filesystem and backup/reliability
-run_report "10-disk-usage.md"                 "$REPO_ROOT/scripts/filesystem/sasd-disk-usage-report.sh"
-run_report "11-deleted-open-files.md"         "$REPO_ROOT/scripts/filesystem/sasd-deleted-open-files.sh"
-run_report "12-backup-age-check.md"           "$REPO_ROOT/scripts/backup/sasd-backup-age-check.sh" --path "$REPO_ROOT" --pattern '*.md' --max-age-days 90
+  generated="$(date --iso-8601=seconds)"
+  host="$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo unknown)"
 
-# Configuration and scheduling
-run_report "20-sshd-config.md"                "$REPO_ROOT/scripts/config/sasd-sshd-config-report.sh"
-run_report "21-sudoers.md"                    "$REPO_ROOT/scripts/config/sasd-sudoers-report.sh"
-run_report "22-journald-config.md"            "$REPO_ROOT/scripts/config/sasd-journald-config-report.sh"
-run_report "23-logrotate.md"                  "$REPO_ROOT/scripts/config/sasd-logrotate-report.sh"
-run_report "24-cron.md"                       "$REPO_ROOT/scripts/config/sasd-cron-report.sh"
-run_report "25-systemd-timers.md"             "$REPO_ROOT/scripts/config/sasd-systemd-timers-report.sh"
-run_report "26-browser-repos.md"              "$REPO_ROOT/scripts/config/sasd-browser-repo-report.sh"
-
-# Network and security controls
-run_report "30-open-ports.md"                 "$REPO_ROOT/scripts/security/sasd-open-ports-audit.sh"
-run_report "31-listening-services.md"         "$REPO_ROOT/scripts/network/sasd-listening-services-report.sh"
-run_report "32-ssh-baseline.md"               "$REPO_ROOT/scripts/security/sasd-ssh-baseline-check.sh"
-run_report "33-system-accounts.md"            "$REPO_ROOT/scripts/security/sasd-system-accounts-audit.sh"
-run_report "34-account-baseline.tsv"          "$REPO_ROOT/scripts/accounts/sasd-account-baseline.sh"
-run_report "35-suid-sgid.md"                  "$REPO_ROOT/scripts/security/sasd-suid-sgid-audit.sh"
-run_report "36-world-writable.md"             "$REPO_ROOT/scripts/security/sasd-world-writable-audit.sh"
-run_report "37-sensitive-files.md"            "$REPO_ROOT/scripts/security/sasd-sensitive-files-check.sh"
-run_report "38-permission-risk.md"            "$REPO_ROOT/scripts/security/sasd-permission-risk-report.sh"
-run_report "39-root-owned-writable.md"        "$REPO_ROOT/scripts/security/sasd-root-owned-writable-report.sh"
-run_report "42-firewall-status.md"            "$REPO_ROOT/scripts/security/sasd-firewall-status-report.sh"
-run_report "43-auditd-status.md"              "$REPO_ROOT/scripts/security/sasd-auditd-status-report.sh"
-
-# Logs and package state
-run_report "40-journal-errors.md"             "$REPO_ROOT/scripts/logging/sasd-journal-errors.sh"
-run_report "41-auth-log.md"                   "$REPO_ROOT/scripts/logging/sasd-auth-log-report.sh"
-run_report "50-update-status.md"              "$REPO_ROOT/scripts/packages/sasd-update-status-report.sh"
-run_report "51-reboot-required.md"            "$REPO_ROOT/scripts/packages/sasd-reboot-required-report.sh"
-
-# Database inventories
-run_report "80-mariadb-inventory.md"          "$REPO_ROOT/scripts/database/sasd-mariadb-inventory.sh"
-run_report "81-postgresql-inventory.md"       "$REPO_ROOT/scripts/database/sasd-postgresql-inventory.sh"
-
-# Compact findings summary is intentionally included by default. It is compact
-# and avoids duplicating large child reports.
-run_report "89-findings-summary.md"           "$REPO_ROOT/scripts/reporting/sasd-findings-summary.sh"
-
-# Verbose summaries are useful but can duplicate large amounts of output. Keep
-# them opt-in so smoke tests and normal collection remain reviewable.
-if [ "$INCLUDE_SUMMARY" -eq 1 ]; then
-  run_report "90-admin-summary.md"            "$REPO_ROOT/scripts/reporting/sasd-admin-summary.sh"
-  run_report "91-security-summary.md"         "$REPO_ROOT/scripts/reporting/sasd-security-summary.sh"
-fi
-
-GENERATED_AT="$(date -Iseconds)"
-{
-  cat <<HEADER
+  cat >"$index_file" <<HEADER
 # SASD Read-only Check Collection
 
-- Generated: $GENERATED_AT
-- Host: $HOSTNAME_VALUE
-- Repository root: \`$REPO_ROOT\`
-- Output directory: \`$OUTPUT_DIR\`
+- Generated: $generated
+- Host: $host
+- Repository root: \\`$REPO_ROOT\\`
+- Output directory: \\`$OUTPUT_DIR\\`
 
 > This collection was generated by read-only toolkit scripts. Review all output
-> before sharing it publicly because reports can contain hostnames, usernames,
-> package names, IP addresses, paths or other environment details.
+> before sharing it publicly because reports can contain environment details.
 
 ## Command status
 
 | Status | Script | Output |
 | ---: | --- | --- |
 HEADER
-  tail -n +2 "$STATUS_FILE" | while IFS=$'\t' read -r status script output; do
-    printf '| %s | `%s` | [`%s`](%s) |\n' "$status" "$script" "$output" "$output"
+
+  tail -n +2 "$status_file" | while IFS=$'\t' read -r status script output; do
+    [[ -n "${status:-}" ]] || continue
+    printf '| %s | `%s` | [`%s`](%s) |\n' "$status" "$script" "$output" "$output" >>"$index_file"
   done
-  cat <<'FOOTER'
+
+  cat >>"$index_file" <<'NOTES'
 
 ## Notes
 
 - Exit status 0 usually means OK or informational output.
 - Exit status 1 can mean findings were detected by an audit script.
 - Exit status 2 or higher usually means an execution problem or missing prerequisite.
-- Verbose summary reports are excluded by default to avoid duplicated output. Use `--include-summary` when wanted.
+- Summary reports are excluded by default to avoid duplicated output. Use `--include-summary` when wanted.
+- Symlink-aware permission reports evaluate target metadata where possible; symlink mode 777 alone is usually not a direct permission finding on Linux.
 - Review each report before sharing it outside your environment.
-FOOTER
-} > "$INDEX_FILE"
+NOTES
+}
 
-printf 'Report directory: %s\n' "$OUTPUT_DIR"
-printf 'Index: %s\n' "$INDEX_FILE"
+main() {
+  parse_args "$@"
+  mkdir -p "$OUTPUT_DIR"
 
-exit 0
+  local status_file="$OUTPUT_DIR/status.tsv"
+  printf 'status\tscript\toutput\n' >"$status_file"
+
+  cd "$REPO_ROOT"
+
+  run_report "scripts/host-doc/sasd-host-inventory.sh" "01-host-inventory.md" "$status_file"
+  run_report "scripts/host-doc/sasd-service-inventory.sh" "02-service-inventory.md" "$status_file"
+  run_report "scripts/host-doc/sasd-package-inventory.sh" "03-package-inventory.md" "$status_file"
+  run_report "scripts/filesystem/sasd-disk-usage-report.sh" "10-disk-usage.md" "$status_file"
+  run_report "scripts/filesystem/sasd-deleted-open-files.sh" "11-deleted-open-files.md" "$status_file"
+  run_report "scripts/backup/sasd-backup-age-check.sh" "12-backup-age-check.md" "$status_file"
+
+  run_report "scripts/config/sasd-sshd-config-report.sh" "20-sshd-config.md" "$status_file"
+  run_report "scripts/config/sasd-sudoers-report.sh" "21-sudoers.md" "$status_file"
+  run_report "scripts/config/sasd-journald-config-report.sh" "22-journald-config.md" "$status_file"
+  run_report "scripts/config/sasd-logrotate-report.sh" "23-logrotate.md" "$status_file"
+  run_report "scripts/config/sasd-cron-report.sh" "24-cron.md" "$status_file"
+  run_report "scripts/config/sasd-systemd-timers-report.sh" "25-systemd-timers.md" "$status_file"
+  run_report "scripts/config/sasd-browser-repo-report.sh" "26-browser-repos.md" "$status_file"
+
+  run_report "scripts/security/sasd-open-ports-audit.sh" "30-open-ports.md" "$status_file"
+  run_report "scripts/network/sasd-listening-services-report.sh" "31-listening-services.md" "$status_file"
+  run_report "scripts/security/sasd-ssh-baseline-check.sh" "32-ssh-baseline.md" "$status_file"
+  run_report "scripts/security/sasd-system-accounts-audit.sh" "33-system-accounts.md" "$status_file"
+  run_report "scripts/accounts/sasd-account-baseline.sh" "34-account-baseline.tsv" "$status_file"
+  run_report "scripts/security/sasd-suid-sgid-audit.sh" "35-suid-sgid.md" "$status_file"
+  run_report "scripts/security/sasd-world-writable-audit.sh" "36-world-writable.md" "$status_file"
+  run_report "scripts/security/sasd-sensitive-files-check.sh" "37-sensitive-files.md" "$status_file"
+  run_report "scripts/security/sasd-permission-risk-report.sh" "38-permission-risk.md" "$status_file"
+  run_report "scripts/security/sasd-root-owned-writable-report.sh" "39-root-owned-writable.md" "$status_file"
+  run_report "scripts/security/sasd-symlink-target-report.sh" "40-symlink-targets.md" "$status_file"
+
+  run_report "scripts/logging/sasd-journal-errors.sh" "41-journal-errors.md" "$status_file"
+  run_report "scripts/logging/sasd-auth-log-report.sh" "42-auth-log.md" "$status_file"
+  run_report "scripts/security/sasd-firewall-status-report.sh" "43-firewall-status.md" "$status_file"
+  run_report "scripts/security/sasd-auditd-status-report.sh" "44-auditd-status.md" "$status_file"
+
+  run_report "scripts/packages/sasd-update-status-report.sh" "50-update-status.md" "$status_file"
+  run_report "scripts/packages/sasd-reboot-required-report.sh" "51-reboot-required.md" "$status_file"
+  run_report "scripts/database/sasd-mariadb-inventory.sh" "80-mariadb-inventory.md" "$status_file"
+  run_report "scripts/database/sasd-postgresql-inventory.sh" "81-postgresql-inventory.md" "$status_file"
+  run_report "scripts/reporting/sasd-findings-summary.sh" "89-findings-summary.md" "$status_file"
+
+  if [[ "$INCLUDE_SUMMARY" -eq 1 ]]; then
+    run_report "scripts/reporting/sasd-admin-summary.sh" "90-admin-summary.md" "$status_file"
+    run_report "scripts/reporting/sasd-security-summary.sh" "91-security-summary.md" "$status_file"
+  fi
+
+  write_index "$status_file"
+
+  echo "Report directory: $OUTPUT_DIR"
+  echo "Index: $OUTPUT_DIR/INDEX.md"
+}
+
+main "$@"
