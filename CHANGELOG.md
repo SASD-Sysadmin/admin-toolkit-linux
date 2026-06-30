@@ -7,6 +7,10 @@ early-stage administration toolkit.
 
 ## Unreleased
 
+No unreleased changes yet.
+
+## v0.2.0 - 2026-06-30
+
 ### Added
 
 - Added focused file integrity monitoring review for Roadmap Milestone 5.
