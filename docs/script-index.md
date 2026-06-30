@@ -172,6 +172,7 @@ Example:
 | `scripts/reporting/sasd-admin-summary.sh` | Generates a Markdown admin summary from selected checks. | Markdown |
 | `scripts/reporting/sasd-findings-summary.sh` | Generates a compact triage findings summary. | Markdown |
 | `scripts/reporting/sasd-release-readiness.sh` | Checks local repository readiness before tagging. | Markdown |
+| `scripts/reporting/sasd-run-fim-review.sh` | Runs the focused file integrity monitoring review collection. | Directory with reports |
 | `scripts/reporting/sasd-run-logging-review.sh` | Runs a focused logging review collection. | Directory with reports |
 | `scripts/reporting/sasd-run-monitoring-review.sh` | Runs a focused monitoring review collection. | Directory with reports |
 | `scripts/reporting/sasd-run-readonly-checks.sh` | Runs a broad read-only check collection and creates an index. | Directory with reports |
@@ -183,6 +184,7 @@ Recommended usage:
 ./scripts/reporting/sasd-run-readonly-checks.sh --output ./reports/local-test
 ./scripts/reporting/sasd-run-logging-review.sh --since today --output ./reports/logging-review
 ./scripts/reporting/sasd-run-monitoring-review.sh --path / --output ./reports/monitoring-review
+./scripts/reporting/sasd-run-fim-review.sh --path /etc/hosts --output ./reports/fim-review
 ```
 
 ## Security

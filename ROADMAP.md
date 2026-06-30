@@ -39,7 +39,7 @@ Release criteria:
 - [x] Permission reporting handles Linux symlink metadata carefully.
 - [x] A findings summary exists for quick triage.
 - [x] A release-readiness script exists.
-- [x] Focused host inventory, monitoring, logging and backup review collectors exist.
+- [x] Focused host inventory, monitoring, logging, FIM and backup review collectors exist.
 - [x] README, script index and CHANGELOG are reviewed and maintained.
 - [x] Final `make check && make smoke` passes on a clean working tree.
 - [x] Release readiness reports blocking failures as zero.
@@ -246,10 +246,15 @@ Implemented:
 
 - [x] `scripts/security/sasd-fim-baseline.sh`
 - [x] `scripts/security/sasd-fim-check.sh`
+- [x] `scripts/security/sasd-fim-report.py`
+- [x] `scripts/reporting/sasd-run-fim-review.sh`
 - [x] `examples/sample-fim-baseline.tsv`
 - [x] `docs/file-integrity-monitoring.md`
+- [x] `docs/fim-review-reporting.md`
+- [x] `docs/milestone-5-fim-status.md`
+- [x] `examples/sample-fim-report.md`
 
-Still planned:
+Still useful later:
 
 - [ ] `scripts/security/sasd-fim-report.py` or
   `scripts/security/sasd-fim-report.pl`

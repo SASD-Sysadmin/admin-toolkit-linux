@@ -44,3 +44,5 @@ The current implementation is intentionally small. It does not provide:
 - Add a sanitized full FIM review from a lab VM.
 - Add role-based baseline path presets.
 - Add guidance for baseline refresh after planned maintenance.
+
+Status: complete for the current read-only baseline.

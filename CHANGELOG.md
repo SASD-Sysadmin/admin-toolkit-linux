@@ -9,6 +9,9 @@ early-stage administration toolkit.
 
 ### Added
 
+- Added focused file integrity monitoring review for Roadmap Milestone 5.
+- Added FIM report summarizer and FIM review collector.
+
 - Added focused monitoring review for Roadmap Milestone 4.
 - Added inode monitoring check and monitoring review collector.
 - Added focused host inventory review for Roadmap Milestone 1.
@@ -37,6 +40,9 @@ early-stage administration toolkit.
 - Added `reports/.gitkeep` while generated report content remains ignored.
 
 ### Changed
+
+- Marked Roadmap Milestone 5 file integrity monitoring as implemented for
+  the current read-only baseline.
 
 - Marked Roadmap Milestone 4 monitoring checks as implemented for the current
   read-only baseline.
