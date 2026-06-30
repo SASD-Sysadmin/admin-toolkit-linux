@@ -240,7 +240,7 @@ Exit criteria:
 
 Goal: detect important file changes with simple, understandable tooling.
 
-Status: mostly complete for a simple baseline.
+Status: complete for the current read-only baseline.
 
 Implemented:
 
@@ -256,9 +256,10 @@ Implemented:
 
 Still useful later:
 
-- [ ] `scripts/security/sasd-fim-report.py` or
-  `scripts/security/sasd-fim-report.pl`
-- [ ] Sanitized `examples/sample-fim-report.md`
+- [ ] Add optional JSON/TSV output for selected FIM reports.
+- [ ] Add role-specific FIM path profiles for workstation, web server and database host.
+- [ ] Add a sanitized full FIM review sample from a lab VM.
+- [ ] Document secure baseline storage and rotation practices in more detail.
 
 Exit criteria:
 
