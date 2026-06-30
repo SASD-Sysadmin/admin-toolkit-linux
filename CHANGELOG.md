@@ -9,6 +9,9 @@ early-stage administration toolkit.
 
 ### Added
 
+- Added focused host inventory review for Roadmap Milestone 1.
+- Added network inventory, storage inventory and host inventory collector scripts.
+- Added host documentation baseline and milestone status documentation.
 - Added focused backup and restore validation review for Roadmap Milestone 6.
 - Added backup location, backup manifest and restore drill planning scripts.
 - Added focused logging review collection for Roadmap Milestone 3.
@@ -33,6 +36,8 @@ early-stage administration toolkit.
 
 ### Changed
 
+- Marked Roadmap Milestone 1 host documentation as implemented for the current
+  read-only baseline.
 - Marked Roadmap Milestone 6 backup and restore validation as implemented for
   the current read-only baseline.
 - Aligned `ROADMAP.md` with the current release-candidate state.

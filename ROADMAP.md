@@ -39,7 +39,7 @@ Release criteria:
 - [x] Permission reporting handles Linux symlink metadata carefully.
 - [x] A findings summary exists for quick triage.
 - [x] A release-readiness script exists.
-- [x] Focused logging and backup review collectors exist.
+- [x] Focused host inventory, logging and backup review collectors exist.
 - [x] README, script index and CHANGELOG are reviewed and maintained.
 - [x] Final `make check && make smoke` passes on a clean working tree.
 - [x] Release readiness reports blocking failures as zero.
@@ -99,21 +99,27 @@ Exit criteria:
 
 Goal: document a Linux host without changing it.
 
-Status: mostly complete, with optional enhancements remaining.
+Status: complete for the current read-only baseline.
 
 Implemented:
 
 - [x] `scripts/host-doc/sasd-host-inventory.sh`
 - [x] `scripts/host-doc/sasd-service-inventory.sh`
 - [x] `scripts/host-doc/sasd-package-inventory.sh`
-- [x] Host/service/package reports in the read-only collector.
+- [x] `scripts/host-doc/sasd-network-inventory.sh`
+- [x] `scripts/host-doc/sasd-storage-inventory.sh`
+- [x] `scripts/reporting/sasd-run-host-inventory.sh`
+- [x] `docs/host-documentation.md`
+- [x] `docs/milestone-1-host-documentation-status.md`
+- [x] `examples/sample-host-report.md`
 
-Still planned:
+Still useful later:
 
-- [ ] `scripts/host-doc/sasd-network-inventory.sh`
-- [ ] `scripts/host-doc/sasd-storage-inventory.sh`
-- [ ] Consolidated `docs/host-documentation.md`
-- [ ] Sanitized `examples/sample-host-report.md`
+- [ ] Add sanitized full host inventory sample output from a lab VM.
+- [ ] Add optional JSON/TSV output for selected inventory scripts.
+- [ ] Add role-specific host profiles such as workstation, web server and
+  database host.
+- [ ] Add deeper virtualization/container and bare-metal hardware inventory.
 
 Exit criteria:
 
@@ -122,6 +128,8 @@ Exit criteria:
   or personal data.
 - Scripts run without root where possible and clearly state when elevated
   privileges improve results.
+- Network and storage inventory are captured without active scanning or system
+  changes.
 
 ## Milestone 2: Read-only security audit baseline
 

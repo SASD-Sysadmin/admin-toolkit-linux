@@ -100,8 +100,19 @@ Example:
 | Script | Purpose | Typical output |
 | --- | --- | --- |
 | `scripts/host-doc/sasd-host-inventory.sh` | Creates a basic host inventory. | Markdown |
+| `scripts/host-doc/sasd-network-inventory.sh` | Reports interfaces, addresses, routes, resolver context and network manager hints. | Markdown |
 | `scripts/host-doc/sasd-package-inventory.sh` | Lists installed packages. | Text/Markdown |
 | `scripts/host-doc/sasd-service-inventory.sh` | Lists services where supported. | Text/Markdown |
+| `scripts/host-doc/sasd-storage-inventory.sh` | Reports mounts, filesystems, block devices, swap and storage tool hints. | Markdown |
+| `scripts/reporting/sasd-run-host-inventory.sh` | Runs the focused host inventory collection. | Directory with reports |
+
+Example:
+
+```bash
+./scripts/reporting/sasd-run-host-inventory.sh --output ./reports/host-inventory-local
+./scripts/host-doc/sasd-network-inventory.sh --max-lines 80
+./scripts/host-doc/sasd-storage-inventory.sh --show-blkid --max-lines 80
+```
 
 ## Logging
 

@@ -70,6 +70,12 @@ Create a focused logging review:
 ./scripts/reporting/sasd-run-logging-review.sh --since today --output ./reports/logging-review
 ```
 
+Create a focused host inventory:
+
+```bash
+./scripts/reporting/sasd-run-host-inventory.sh --output ./reports/host-inventory
+```
+
 Create a focused backup and restore validation review:
 
 ```bash
@@ -88,7 +94,7 @@ scripts/
   config/         Configuration reports for sshd, sudoers, journald, logrotate, cron and timers
   database/       Conservative local database inventory helpers
   filesystem/     Filesystem and open-deleted-file reports
-  host-doc/       Host, service and package inventory
+  host-doc/       Host, service, package, network and storage inventory
   logging/        Journal, sudo, kernel and log-volume review helpers
   monitoring/     Simple monitoring-plugin-style checks
   network/        DNS and listening-service reports
@@ -126,8 +132,10 @@ A detailed script index is available in [docs/script-index.md](docs/script-index
 | Filesystem | `scripts/filesystem/sasd-deleted-open-files.sh` | Find deleted files that are still held open by processes. |
 | Filesystem | `scripts/filesystem/sasd-disk-usage-report.sh` | Report disk usage and largest filesystem areas. |
 | Host documentation | `scripts/host-doc/sasd-host-inventory.sh` | Generate a basic host inventory report. |
+| Host documentation | `scripts/host-doc/sasd-network-inventory.sh` | Report interfaces, addresses, routes and resolver context. |
 | Host documentation | `scripts/host-doc/sasd-package-inventory.sh` | List installed packages. |
 | Host documentation | `scripts/host-doc/sasd-service-inventory.sh` | List system services where supported. |
+| Host documentation | `scripts/host-doc/sasd-storage-inventory.sh` | Report mounts, filesystems, block devices and swap context. |
 | Logging | `scripts/logging/sasd-auth-log-report.sh` | Summarize authentication log signals. |
 | Logging | `scripts/logging/sasd-journal-errors.sh` | Review recent journal warnings/errors. |
 | Logging | `scripts/logging/sasd-kernel-warnings.sh` | Review recent kernel warnings and dmesg fallback output. |
@@ -196,6 +204,8 @@ package names, service names, IP addresses and environment-specific details.
 ## Documentation
 
 - [docs/script-index.md](docs/script-index.md)
+- [docs/host-documentation.md](docs/host-documentation.md)
+- [docs/milestone-1-host-documentation-status.md](docs/milestone-1-host-documentation-status.md)
 - [docs/testing.md](docs/testing.md)
 - [docs/run-readonly-checks.md](docs/run-readonly-checks.md)
 - [docs/backup-restore-validation.md](docs/backup-restore-validation.md)
