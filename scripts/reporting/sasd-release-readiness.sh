@@ -195,24 +195,21 @@ run_smoke_check() {
 }
 
 if [ "$FORMAT" = "markdown" ]; then
-  cat <<HEADER
-# SASD Release Readiness Report
-
-- Generated: $GENERATED
-- Host: $HOSTNAME_VALUE
-- Repository: \\`$ROOT\\`
-- Branch: \\`$CURRENT_BRANCH\\`
-- Commit: \\`$CURRENT_COMMIT\\`
-- Shell scripts: $SCRIPT_COUNT
-- Markdown docs: $DOC_COUNT
-
-> This is a read-only repository readiness check. It does not create a release tag.
-
-## Checks
-
-| Result | Severity | Check |
-| --- | --- | --- |
-HEADER
+  # Use printf instead of an unquoted here-doc here. Backticks in an
+  # unquoted here-doc are command substitutions, which breaks paths and
+  # branch names when Markdown code spans are used.
+  printf '# SASD Release Readiness Report\n\n'
+  printf -- '- Generated: %s\n' "$GENERATED"
+  printf -- '- Host: %s\n' "$HOSTNAME_VALUE"
+  printf -- '- Repository: `%s`\n' "$ROOT"
+  printf -- '- Branch: `%s`\n' "$CURRENT_BRANCH"
+  printf -- '- Commit: `%s`\n' "$CURRENT_COMMIT"
+  printf -- '- Shell scripts: %s\n' "$SCRIPT_COUNT"
+  printf -- '- Markdown docs: %s\n\n' "$DOC_COUNT"
+  printf '> This is a read-only repository readiness check. It does not create a release tag.\n\n'
+  printf '## Checks\n\n'
+  printf '| Result | Severity | Check |\n'
+  printf '| --- | --- | --- |\n'
 else
   cat <<HEADER
 SASD Release Readiness Report
