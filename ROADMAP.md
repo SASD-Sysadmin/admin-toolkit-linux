@@ -39,6 +39,7 @@ Release criteria:
 - [x] Permission reporting handles Linux symlink metadata carefully.
 - [x] A findings summary exists for quick triage.
 - [x] A release-readiness script exists.
+- [x] Focused logging and backup review collectors exist.
 - [x] README, script index and CHANGELOG are reviewed and maintained.
 - [x] Final `make check && make smoke` passes on a clean working tree.
 - [x] Release readiness reports blocking failures as zero.
@@ -248,21 +249,30 @@ Exit criteria:
 
 Goal: make backup state and restore testability visible.
 
-Status: partially complete.
+Status: complete for the current read-only baseline.
 
 Implemented:
 
 - [x] `scripts/backup/sasd-rsync-snapshot.sh`
 - [x] `scripts/backup/sasd-backup-age-check.sh`
+- [x] `scripts/backup/sasd-backup-location-report.sh`
+- [x] `scripts/backup/sasd-backup-manifest.sh`
+- [x] `scripts/backup/sasd-restore-drill-plan.sh`
+- [x] `scripts/reporting/sasd-run-backup-review.sh`
 - [x] `docs/backup-validation.md`
 - [x] `docs/backup-age-check.md`
+- [x] `docs/backup-restore-validation.md`
+- [x] `docs/milestone-6-backup-restore-status.md`
+- [x] `examples/sample-backup-review-index.md`
 
-Still planned:
+Still useful later:
 
-- [ ] `scripts/backup/sasd-restore-test.sh`
-- [ ] `scripts/backup/sasd-git-bundle-backup.sh`
-- [ ] Backup manifest or restore-test template.
-- [ ] Sanitized restore-test example report.
+- [ ] Add sanitized full backup review sample output.
+- [ ] Add role-specific backup expectations for files, databases and Git repos.
+- [ ] Add restore evidence template for manual restore drills.
+- [ ] Add optional JSON output for selected backup reports.
+- [ ] Consider `scripts/backup/sasd-git-bundle-backup.sh` as a future,
+  explicitly documented backup-creation helper.
 
 Exit criteria:
 
@@ -270,6 +280,7 @@ Exit criteria:
   is incomplete.
 - No script deletes backup data by default.
 - Example workflows are suitable for lab and small-company use.
+- Restore validation stays separated from production restore execution.
 
 ## Milestone 7: Ansible baseline preparation
 

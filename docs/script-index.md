@@ -44,12 +44,16 @@ Example:
 | Script | Purpose | Typical output |
 | --- | --- | --- |
 | `scripts/backup/sasd-backup-age-check.sh` | Checks whether matching backup files exist and are recent enough. | Text |
+| `scripts/backup/sasd-backup-location-report.sh` | Reviews backup locations, mount context and newest visible files. | Markdown |
+| `scripts/backup/sasd-backup-manifest.sh` | Creates a lightweight metadata manifest for visible backup files. | TSV/Markdown |
+| `scripts/backup/sasd-restore-drill-plan.sh` | Generates a non-destructive restore drill checklist. | Markdown |
 | `scripts/backup/sasd-rsync-snapshot.sh` | Conservative rsync snapshot helper, dry-run by default. | Text |
 
 Example:
 
 ```bash
 ./scripts/backup/sasd-backup-age-check.sh --path /backup --pattern '*.tar.gz' --max-age-days 2
+./scripts/reporting/sasd-run-backup-review.sh --path /backup --pattern '*.tar.gz' --service mariadb
 ```
 
 ## Configuration

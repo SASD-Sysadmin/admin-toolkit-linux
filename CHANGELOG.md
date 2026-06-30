@@ -9,6 +9,8 @@ early-stage administration toolkit.
 
 ### Added
 
+- Added focused backup and restore validation review for Roadmap Milestone 6.
+- Added backup location, backup manifest and restore drill planning scripts.
 - Added focused logging review collection for Roadmap Milestone 3.
 - Added sudo usage, kernel warning and log volume reporting scripts.
 - Added release-readiness reporting for local release checks.
@@ -17,8 +19,9 @@ early-stage administration toolkit.
 - Added cron and systemd timer reporting scripts.
 - Added firewall and auditd status reporting scripts.
 - Added conservative MariaDB/MySQL inventory script.
-- Added documentation for logging review, release readiness, scheduling,
-  security controls, database inventory and privilege expectations.
+- Added documentation for backup/restore validation, logging review, release
+  readiness, scheduling, security controls, database inventory and privilege
+  expectations.
 - Extended the read-only collector with additional operational and security
   reports.
 - Added a detailed README script index.
@@ -30,6 +33,8 @@ early-stage administration toolkit.
 
 ### Changed
 
+- Marked Roadmap Milestone 6 backup and restore validation as implemented for
+  the current read-only baseline.
 - Aligned `ROADMAP.md` with the current release-candidate state.
 - Marked Roadmap Milestone 3 logging review as implemented for the current
   read-only baseline.

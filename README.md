@@ -19,6 +19,7 @@ Current focus:
 - host documentation and inventory
 - read-only security audit helpers
 - Linux log and service review
+- backup and restore validation review
 - simple monitoring plugin examples
 - account and configuration baselines
 - file integrity baseline checks
@@ -28,7 +29,7 @@ Current focus:
 Later focus:
 
 - deeper service-specific checks
-- backup restore test documentation
+- role-specific backup/restore expectations and evidence templates
 - Ansible-based baseline configuration
 - DNS, database and SNMP reporting helpers
 
@@ -69,6 +70,12 @@ Create a focused logging review:
 ./scripts/reporting/sasd-run-logging-review.sh --since today --output ./reports/logging-review
 ```
 
+Create a focused backup and restore validation review:
+
+```bash
+./scripts/reporting/sasd-run-backup-review.sh --path /backup --pattern '*.tar.gz' --output ./reports/backup-review
+```
+
 Generated reports are intentionally written below `reports/`, which is ignored
 by Git.
 
@@ -77,7 +84,7 @@ by Git.
 ```text
 scripts/
   accounts/       Local account baselines and baseline comparisons
-  backup/         Backup age checks and rsync snapshot helper
+  backup/         Backup age, location, manifest and restore-drill helpers
   config/         Configuration reports for sshd, sudoers, journald, logrotate, cron and timers
   database/       Conservative local database inventory helpers
   filesystem/     Filesystem and open-deleted-file reports
@@ -103,6 +110,9 @@ A detailed script index is available in [docs/script-index.md](docs/script-index
 | Accounts | `scripts/accounts/sasd-account-baseline.sh` | Export a local account/group baseline without password hashes. |
 | Accounts | `scripts/accounts/sasd-account-diff.sh` | Compare two account baselines. |
 | Backup | `scripts/backup/sasd-backup-age-check.sh` | Check whether matching backup files exist and are recent enough. |
+| Backup | `scripts/backup/sasd-backup-location-report.sh` | Review backup locations, mount context and newest visible files. |
+| Backup | `scripts/backup/sasd-backup-manifest.sh` | Create a lightweight metadata manifest for visible backup files. |
+| Backup | `scripts/backup/sasd-restore-drill-plan.sh` | Generate a non-destructive restore drill checklist. |
 | Backup | `scripts/backup/sasd-rsync-snapshot.sh` | Conservative rsync snapshot helper, dry-run by default. |
 | Config | `scripts/config/sasd-browser-repo-report.sh` | Report browser/vendor package repositories and keyring hints. |
 | Config | `scripts/config/sasd-cron-report.sh` | Report cron configuration and scheduled jobs. |
@@ -188,6 +198,8 @@ package names, service names, IP addresses and environment-specific details.
 - [docs/script-index.md](docs/script-index.md)
 - [docs/testing.md](docs/testing.md)
 - [docs/run-readonly-checks.md](docs/run-readonly-checks.md)
+- [docs/backup-restore-validation.md](docs/backup-restore-validation.md)
+- [docs/milestone-6-backup-restore-status.md](docs/milestone-6-backup-restore-status.md)
 - [docs/logging-milestone-3.md](docs/logging-milestone-3.md)
 - [docs/milestone-3-logging-status.md](docs/milestone-3-logging-status.md)
 - [docs/privilege-expectations.md](docs/privilege-expectations.md)
